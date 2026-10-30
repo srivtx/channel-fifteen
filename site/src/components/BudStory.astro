@@ -1,112 +1,147 @@
 ---
 // The landing page's scroll story: the real Blender model, assembled, pulled apart,
-// explained part by part, put back together, then docked in its case.
+// explained part by part, put back together, then docked in its case and shut in.
+// Scroll position drives every motion directly, so the story scrubs both ways.
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const steps = [
   {
-    kicker: "00 · the problem",
+    kicker: "the problem",
     title: "A pair of earbuds that wouldn't talk to a Mac",
     text: "On a phone, realme Link shows each bud's battery and changes noise cancelling, EQ, spatial audio and taps. On a Mac: nothing. The buds play music, and every setting is invisible. This is the story of fixing that, from the electrons up.",
+    ink: ["#121110", "#efe8d8", "#ff3d8b"],
   },
   {
-    kicker: "01 · anatomy",
+    kicker: "anatomy",
     title: "It's a computer that fits in your ear",
     text: "Pull one apart along its axis and you find a speaker, three microphones, sensors, a battery, a radio and a processor with memory. Every setting Earshot changes ends up somewhere in here.",
+    ink: ["#e8c3ba", "#1b1a17", "#2c4fa3"],
   },
   {
     kicker: "sound",
     title: "Magnet, coil, diaphragm",
     text: "Current through the voice coil pushes against the magnet, the diaphragm moves, and air moves with it. The ear tip seals it all in — without the seal there is no bass and nothing for noise cancelling to work with.",
     group: ["Ear_tip", "Acoustic_mesh", "Diaphragm", "Voice_coil", "Magnet"],
+    ink: ["#e9b44c", "#1b1a17", "#e0462f"],
   },
   {
     kicker: "the brain",
     title: "Settings live in the flash",
     text: "The Bluetooth SoC is radio, DSP and CPU on one chip. Its firmware reads and writes the flash, where your EQ, noise mode and tap actions are kept — which is why they survive switching to your phone.",
     group: ["PCB", "Bluetooth_SoC", "Flash", "PMIC"],
+    ink: ["#1e5e3f", "#efe8d8", "#4be08a"],
   },
   {
     kicker: "senses",
     title: "Mics, light and touch",
     text: "A feed-forward mic hears the world, a feedback mic hears your ear canal, a talk mic hears you. Infrared light bouncing off skin says “in ear”. Your finger changes the touch pad's capacitance.",
     group: ["Feed-forward_mic", "Feedback_mic", "Talk_mic", "IR_wear_sensor", "Touch_pad"],
+    ink: ["#2c4fa3", "#efe8d8", "#e9b44c"],
   },
   {
     kicker: "power & radio",
     title: "A cell, two pins, an antenna",
     text: "A tiny lithium-ion cell, charged through two pogo pins, and an antenna tuned to 2.4 GHz in the stem — where 79 channels are hopped 1600 times a second.",
-    group: ["Li-ion_cell", "Cell_label", "Pogo_contact_0", "Pogo_contact_1", "Antenna", "Case_magnet"],
+    group: ["Li-ion_cell", "Pogo_contact_0", "Antenna", "Case_magnet"],
+    ink: ["#e0462f", "#1b1a17", "#efe8d8"],
   },
   {
-    kicker: "05 · the door",
+    kicker: "the door",
     title: "Channel 15: “oppointeraction”",
     text: "Behind the music sits a hidden serial channel macOS never opens. Earshot opens it and asks, in nine bytes, “how full is your battery?” — and the buds answer: left 10 %.",
     hex: true,
+    ink: ["#121110", "#efe8d8", "#4be08a"],
   },
   {
     kicker: "the case",
-    title: "Open the lid, the buds wake",
-    text: "The case is a computer too: its own cell, a charger, and a Hall sensor that notices the lid. It tells the buds its level, and the buds tell Earshot.",
-    caseModel: true,
+    title: "Back in the case, the buds keep talking",
+    text: "The case is a computer too: its own cell, a charger, and a Hall sensor that notices the lid. Each bud drops onto two pogo pins in its well; the case tells them its level, and the buds tell Earshot.",
+    ink: ["#ff3d8b", "#1b1a17", "#2c4fa3"],
   },
   {
     kicker: "read on",
-    title: "Thirteen chapters, forty-three plates",
+    title: "Lid shut. Thirteen chapters, forty-three plates.",
     text: "Sound to bits, radio, the Bluetooth stack, macOS, the method, the protocols byte by byte, integrity, seven brands, the app and shipping. Start anywhere.",
+    ink: ["#efe8d8", "#1b1a17", "#e0462f"],
   },
 ];
 ---
 
-<section id="story" class="story" data-base={base} data-steps={JSON.stringify(steps.map((s) => ({ group: s.group ?? null, hex: !!s.hex, caseModel: !!s.caseModel })))}>
+<section id="story" class="story" data-base={base} data-steps={JSON.stringify(steps.map((s) => ({ group: s.group ?? null, hex: !!s.hex, ink: s.ink })))}>
   <div class="stage">
-    <canvas aria-label="3D model of an earbud"></canvas>
+    <div class="dots" aria-hidden="true"></div>
+    <span class="stepno pixel" aria-hidden="true">00</span>
+    <canvas aria-label="3D model of an earbud and its case"></canvas>
+    <svg class="leaders" aria-hidden="true"></svg>
     <div class="labels"></div>
-    <div class="hex" aria-hidden="true">
-      <span>AA 07 00 00 06 01 00 00 00 →</span>
-      <span class="back">← AA 0D 00 00 06 81 00 06 00 00 02 01 0A 03 00</span>
-      <span>AA 07 00 00 09 01 02 00 00 →</span>
-      <span class="back">← AA 0B 00 00 0C 81 03 04 00 00 01 01 08</span>
+    <div class="hex mono" aria-hidden="true">
+      <span>MAC → BUD &nbsp; AA 07 00 00 06 01 00 00 00</span>
+      <span class="back">BUD → MAC &nbsp; AA 0D 00 00 06 81 00 06 00 00 02 01 0A 03 00</span>
+      <span>MAC → BUD &nbsp; AA 07 00 00 09 01 02 00 00</span>
+      <span class="back">BUD → MAC &nbsp; AA 0B 00 00 0C 81 03 04 00 00 01 01 08</span>
     </div>
+    <p class="fig mono"><span class="figno">FIG. 00</span> — <span class="figname">THE PROBLEM</span></p>
     <div class="loading mono">loading model…</div>
   </div>
   <div class="steps">
     {steps.map((s, i) => (
       <article class="step" data-i={i}>
+        <p class="num pixel">{String(i).padStart(2, "0")}<span>/{String(steps.length - 1).padStart(2, "0")}</span></p>
         <p class="kicker">{s.kicker}</p>
         <h2>{s.title}</h2>
-        <p>{s.text}</p>
-        {i === steps.length - 1 && <a class="btn" href={`${base}/chapters/00-prologue/`}>Start with the prologue →</a>}
+        <p class="txt">{s.text}</p>
+        {i === steps.length - 1 && <a class="btn go" href={`${base}/chapters/00-prologue/`}>Start with the prologue →</a>}
       </article>
     ))}
   </div>
 </section>
 
 <style>
-  .story { position: relative; display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 32px; max-width: 1240px; margin: 0 auto; padding: 0 16px; }
-  .stage { position: sticky; top: 70px; height: calc(100vh - 90px); grid-column: 2; grid-row: 1; }
-  .stage canvas { width: 100%; height: 100%; display: block; }
-  .steps { grid-column: 1; grid-row: 1; padding: 10vh 0 30vh; }
-  .step { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; opacity: 0.28; transition: opacity 0.4s; }
+  .story {
+    --bg: #121110; --fg: #efe8d8; --accent: #ff3d8b;
+    position: relative; background: var(--bg); color: var(--fg); transition: background-color 0.6s, color 0.6s;
+    display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 32px; padding: 0 max(16px, calc((100vw - 1280px) / 2));
+  }
+  .stage { position: sticky; top: 58px; height: calc(100svh - 58px); grid-column: 2; grid-row: 1; overflow: hidden; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .dots { position: absolute; inset: 0; opacity: 0.16; background: radial-gradient(circle, var(--fg) 1.1px, transparent 1.4px) 0 0 / 10px 10px;
+    -webkit-mask-image: radial-gradient(ellipse at 60% 55%, #000 0%, transparent 70%); mask-image: radial-gradient(ellipse at 60% 55%, #000 0%, transparent 70%); }
+  .stepno { position: absolute; right: 0; top: 10px; font-size: clamp(110px, 17vw, 240px); line-height: 1; color: transparent; -webkit-text-stroke: 2px var(--accent); opacity: 0.9; transition: -webkit-text-stroke-color 0.6s; }
+  .fig { position: absolute; left: 0; bottom: 22px; margin: 0; font-size: 11px; letter-spacing: 0.16em; }
+  .fig .figno { color: var(--accent); }
+  .steps { grid-column: 1; grid-row: 1; padding: 6vh 0 24vh; position: relative; z-index: 1; }
+  .step { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; opacity: 0.25; transition: opacity 0.4s; }
   .step.on { opacity: 1; }
-  .step h2 { font: 400 clamp(26px, 3.4vw, 38px)/1.12 var(--pixel); margin: 0.2em 0 0.4em; }
-  .step p:not(.kicker) { color: var(--muted); font-size: 17px; }
-  .step .btn { align-self: flex-start; margin-top: 10px; text-decoration: none; }
+  .num { margin: 0; font-size: 46px; line-height: 1; color: var(--accent); }
+  .num span { font-size: 18px; opacity: 0.6; color: var(--fg); }
+  .step .kicker { color: var(--fg); opacity: 0.75; margin: 16px 0 0; }
+  .step h2 { font: 400 clamp(26px, 3.2vw, 38px)/1.12 var(--pixel); margin: 0.3em 0 0.5em; }
+  .txt { font-size: 17px; line-height: 1.6; margin: 0; opacity: 0.92; }
+  .go { align-self: flex-start; margin-top: 22px; text-decoration: none; background: var(--accent); color: var(--bone); border: 1.5px solid var(--fg); box-shadow: 5px 5px 0 var(--fg); padding: 11px 16px; border-radius: 0; font-size: 13px; }
+  .go:hover { color: var(--bone); border-color: var(--fg); transform: translate(-1px, -1px); }
+  .leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
   .labels { position: absolute; inset: 0; pointer-events: none; }
-  .labels :global(div) { position: absolute; transform: translate(-4px, -4px); font: 600 11px var(--mono); white-space: nowrap; color: var(--text); }
-  .labels :global(div) { border-left: 1.5px solid var(--verm); padding-left: 6px; }
-  .labels :global(div span) { background: var(--paper); padding: 2px 5px; border: 1px solid var(--text); border-radius: 4px; }
-  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
-  .hex { position: absolute; left: 0; right: 0; top: 18%; display: grid; gap: 12px; opacity: 0; transition: opacity 0.5s; pointer-events: none; font: 600 13px var(--mono); overflow: hidden; }
+  .labels :global(div) {
+    position: absolute; top: 0; left: 0; font: 600 11px/1 var(--mono); white-space: nowrap; letter-spacing: 0.04em;
+    background: var(--bg); color: var(--fg); padding: 5px 7px; border: 1.5px solid var(--fg); box-shadow: 3px 3px 0 var(--accent);
+    transition: background-color 0.6s;
+  }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; opacity: 0.7; }
+  .hex { position: absolute; left: 0; right: 0; top: 14%; display: grid; gap: 10px; opacity: 0; transition: opacity 0.5s; pointer-events: none; font-size: 13px; font-weight: 600; overflow: hidden; }
   .hex.on { opacity: 1; }
-  .hex span { white-space: nowrap; color: var(--cobalt); animation: flow 6s linear infinite; }
-  .hex span.back { color: var(--verm); animation-direction: reverse; }
-  @keyframes flow { from { transform: translateX(-30%); } to { transform: translateX(60%); } }
+  .hex span { white-space: nowrap; color: var(--phosphor); animation: flow 7s linear infinite; }
+  .hex span.back { color: var(--magenta); animation-direction: reverse; }
+  @keyframes flow { from { transform: translateX(-35%); } to { transform: translateX(55%); } }
   @media (max-width: 860px) {
-    .story { grid-template-columns: 1fr; }
-    .stage { grid-column: 1; top: 58px; height: 48vh; z-index: 2; background: var(--paper); border-bottom: 1.5px solid var(--text); }
-    .steps { grid-row: 2; padding-top: 4vh; }
-    .step { min-height: 64vh; }
+    .story { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .stage { grid-column: 1; height: 50svh; z-index: 2; background: var(--bg); border-bottom: 1.5px solid var(--fg); transition: background-color 0.6s; margin: 0 -16px; }
+    .steps { grid-row: 2; padding-top: 2vh; }
+    .step { min-height: 70svh; justify-content: flex-start; padding-top: 6svh; }
+    .num { font-size: 34px; }
+    .stepno { font-size: 96px; }
+    .labels :global(div) { font-size: 9.5px; padding: 3px 5px; box-shadow: 2px 2px 0 var(--accent); }
+    .hex { font-size: 10px; top: 8%; }
+    .fig { left: 16px; bottom: 10px; }
   }
   @media (prefers-reduced-motion: reduce) { .hex span { animation: none; } }
 </style>
@@ -115,91 +150,130 @@ const steps = [
   import * as THREE from "three";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+  type Step = { group: string[] | null; hex: boolean; ink: [string, string, string] };
   const root = document.getElementById("story")!;
   const base = root.dataset.base ?? "";
-  const steps: { group: string[] | null; hex: boolean; caseModel: boolean }[] = JSON.parse(root.dataset.steps!);
+  const steps: Step[] = JSON.parse(root.dataset.steps!);
   const canvas = root.querySelector("canvas")!;
   const stage = root.querySelector(".stage") as HTMLElement;
-  const labels = root.querySelector(".labels") as HTMLElement;
+  const labelBox = root.querySelector(".labels") as HTMLElement;
+  const leaders = root.querySelector(".leaders") as SVGSVGElement;
   const hex = root.querySelector(".hex") as HTMLElement;
+  const stepNo = root.querySelector(".stepno") as HTMLElement;
+  const figNo = root.querySelector(".figno") as HTMLElement;
+  const figName = root.querySelector(".figname") as HTMLElement;
+  const stepEls = [...root.querySelectorAll<HTMLElement>(".step")];
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const narrow = matchMedia("(max-width: 860px)");
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 300);
   scene.add(new THREE.HemisphereLight(0xfff7e8, 0x8a8170, 1.6));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.7);
   sun.position.set(4, 8, 6);
   scene.add(sun);
 
-  // Three flat tones, like a riso print.
-  const tones = new Uint8Array([90, 170, 255]);
-  const gradient = new THREE.DataTexture(tones, 3, 1, THREE.RedFormat);
+  // Three flat tones, like a riso print, and an ink outline on every part.
+  const gradient = new THREE.DataTexture(new Uint8Array([90, 170, 255]), 3, 1, THREE.RedFormat);
   gradient.needsUpdate = true;
-  const ink = new THREE.LineBasicMaterial({ color: 0x1b1a17, transparent: true });
-
   function stylise(obj: THREE.Object3D) {
     obj.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       const src = mesh.material as THREE.MeshStandardMaterial;
       mesh.material = new THREE.MeshToonMaterial({ color: src.color ?? new THREE.Color(0xdddddd), gradientMap: gradient, transparent: true });
-      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 38), ink.clone()));
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 38), new THREE.LineBasicMaterial({ color: 0x1b1a17, transparent: true })));
+    });
+  }
+  function fade(obj: THREE.Object3D, target: number, k: number) {
+    obj.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const m = mesh.material as THREE.MeshToonMaterial;
+      m.opacity += (target - m.opacity) * k;
+      m.depthWrite = m.opacity > 0.6;
+      mesh.children.forEach((c) => (((c as THREE.LineSegments).material as THREE.LineBasicMaterial).opacity = m.opacity));
     });
   }
 
-  const bud = new THREE.Group();
-  const caseGroup = new THREE.Group();
-  scene.add(bud, caseGroup);
+  // The hero bud flies into the right well; a second bud joins it in the left one.
+  const budR = new THREE.Group();
+  const budL = new THREE.Group();
+  const caseRoot = new THREE.Group();
+  scene.add(budR, budL, caseRoot);
   const parts = new Map<string, { node: THREE.Object3D; home: THREE.Vector3; offset: THREE.Vector3 }>();
-  let budBox = new THREE.Box3();
-  let explodedBox = new THREE.Box3();
-  let caseBox = new THREE.Box3();
-  let ready = false;
+  const budBox = new THREE.Box3(), explodedBox = new THREE.Box3(), caseBox = new THREE.Box3(), shutBox = new THREE.Box3();
+  let hinge: THREE.Object3D | null = null;
+  let led: THREE.MeshToonMaterial | null = null;
+  const dockR = { p: new THREE.Vector3(), q: new THREE.Quaternion() };
+  const dockL = { p: new THREE.Vector3(), q: new THREE.Quaternion() };
+  let ready = false, caseReady = false;
+  const LID_OPEN = THREE.MathUtils.degToRad(-108);
 
   const loader = new GLTFLoader();
-  Promise.all([
-    loader.loadAsync(`${base}/models/bud.glb`),
-    fetch(`${base}/models/explode.json`).then((r) => r.json()),
-  ]).then(([gltf, offsets]: [any, Record<string, number[]>]) => {
-    stylise(gltf.scene);
-    bud.add(gltf.scene);
-    budBox = new THREE.Box3().setFromObject(gltf.scene);
-    for (const [name, off] of Object.entries(offsets)) {
-      const node = gltf.scene.getObjectByName(name.replace(/\s/g, "_"));
-      if (node) parts.set(node.name, { node, home: node.position.clone(), offset: new THREE.Vector3(...off) });
-    }
-    parts.forEach((p) => p.node.position.copy(p.home).add(p.offset));
-    explodedBox = new THREE.Box3().setFromObject(gltf.scene);
-    parts.forEach((p) => p.node.position.copy(p.home));
-    root.querySelector(".loading")?.remove();
-    ready = true;
-    loader.loadAsync(`${base}/models/case.glb`).then((c: any) => {
-      stylise(c.scene);
-      caseGroup.add(c.scene);
-      caseBox = new THREE.Box3().setFromObject(c.scene);
-      caseGroup.visible = false;
-    });
-  });
-
-  // Which step is in view.
-  let active = 0;
-  const stepEls = [...root.querySelectorAll<HTMLElement>(".step")];
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          active = Number((e.target as HTMLElement).dataset.i);
-          stepEls.forEach((s) => s.classList.toggle("on", s === e.target));
-        }
+  Promise.all([loader.loadAsync(`${base}/models/bud.glb`), fetch(`${base}/models/explode.json`).then((r) => r.json())])
+    .then(([gltf, offsets]: [any, Record<string, number[]>]) => {
+      stylise(gltf.scene);
+      budR.add(gltf.scene);
+      budBox.setFromObject(gltf.scene);
+      for (const [name, off] of Object.entries(offsets)) {
+        const node = gltf.scene.getObjectByName(name.replace(/\s/g, "_"));
+        if (node) parts.set(node.name, { node, home: node.position.clone(), offset: new THREE.Vector3(...off) });
       }
-    },
-    // On narrow screens the stage covers the top half, so read the step just below it.
-    { rootMargin: matchMedia("(max-width: 860px)").matches ? "-62% 0px -30% 0px" : "-45% 0px -45% 0px" },
-  );
-  stepEls.forEach((s) => io.observe(s));
-  stepEls[0]?.classList.add("on");
+      parts.forEach((p) => p.node.position.copy(p.home).add(p.offset));
+      explodedBox.setFromObject(gltf.scene);
+      parts.forEach((p) => p.node.position.copy(p.home));
+      // The second bud gets its own materials so the first one's highlighting doesn't leak into it.
+      const twin = gltf.scene.clone(true);
+      twin.traverse((o: THREE.Object3D) => {
+        const m = o as THREE.Mesh;
+        if (m.isMesh || (o as THREE.LineSegments).isLineSegments) m.material = (m.material as THREE.Material).clone();
+      });
+      budL.add(twin);
+      budL.visible = false;
+      root.querySelector(".loading")?.remove();
+      ready = true;
+      return Promise.all([loader.loadAsync(`${base}/models/case_body.glb`), loader.loadAsync(`${base}/models/case_lid.glb`)]);
+    })
+    .then(([body, lid]: any[]) => {
+      stylise(body.scene);
+      stylise(lid.scene);
+      caseRoot.add(body.scene, lid.scene);
+      // Read the docks and the box in the case's own frame, not wherever the rise-in has parked it.
+      caseRoot.position.set(0, 0, 0);
+      caseRoot.rotation.set(0, 0, 0);
+      caseRoot.updateMatrixWorld(true);
+      for (const [name, d] of [["Dock_R", dockR], ["Dock_L", dockL]] as const) {
+        body.scene.getObjectByName(name)?.matrixWorld.decompose(d.p, d.q, new THREE.Vector3());
+      }
+      hinge = lid.scene.getObjectByName("Lid_hinge") ?? null;
+      const ledMesh = body.scene.getObjectByName("Case_LED") as THREE.Mesh | undefined;
+      if (ledMesh) led = ledMesh.material as THREE.MeshToonMaterial;
+      caseRoot.updateMatrixWorld(true);
+      shutBox.setFromObject(caseRoot);
+      if (hinge) hinge.rotation.x = LID_OPEN;
+      caseRoot.updateMatrixWorld(true);
+      caseBox.setFromObject(caseRoot);
+      caseRoot.visible = false;
+      caseReady = true;
+    });
+
+  // Scroll → a continuous story position: 2.5 means halfway through step 2's screen.
+  function progress() {
+    const line = narrow.matches ? innerHeight * 0.68 : innerHeight * 0.5;
+    let p = 0;
+    stepEls.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      if (r.top <= line) p = i + Math.min(1, (line - r.top) / r.height);
+    });
+    return Math.max(0, p - 0.5);
+  }
+  const ss = (a: number, b: number, x: number) => {
+    const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
 
   function resize() {
     const { width, height } = stage.getBoundingClientRect();
@@ -210,87 +284,184 @@ const steps = [
   new ResizeObserver(resize).observe(stage);
   resize();
 
-  // Smoothed state.
-  let explode = 0;
-  let caseMix = 0;
-  const dir = new THREE.Vector3(0.3, 0.32, 1).normalize();
-  const caseDir = new THREE.Vector3(0.25, 0.6, 1).normalize();
-  const target = new THREE.Vector3();
+  // Distance at which a box fits the view with a margin (more when labels need the room).
   const tmp = new THREE.Vector3();
-
-  // Distance at which the box's width and height both fit the view, with a margin.
-  function fit(box: THREE.Box3) {
+  function fit(box: THREE.Box3, margin: number) {
     const size = box.getSize(tmp);
     const half = Math.tan((camera.fov * Math.PI) / 360);
     const w = Math.max(size.x, size.z) / 2, h = size.y / 2;
-    return Math.max(h / half, w / (half * camera.aspect)) * 1.12 + size.z / 2;
+    return Math.max(h / half, w / (half * camera.aspect)) * margin + size.z / 2;
   }
 
+  // Callouts: an anchor on each part, labels stacked in two columns at the stage edges so they never collide.
+  let shownGroup: string[] | null = null;
+  const labelEls = new Map<string, HTMLDivElement>();
+  function setLabels(group: string[] | null) {
+    if (group === shownGroup) return;
+    shownGroup = group;
+    labelBox.innerHTML = "";
+    labelEls.clear();
+    for (const name of group ?? []) {
+      const el = document.createElement("div");
+      el.textContent = name.replace(/_/g, " ").replace(/ \d$/, "");
+      labelBox.appendChild(el);
+      labelEls.set(name, el);
+    }
+  }
+  type Callout = { el: HTMLDivElement; ax: number; ay: number; w: number; h: number; y: number };
+  function layoutLabels(alpha: number) {
+    leaders.innerHTML = "";
+    labelBox.style.opacity = String(alpha);
+    if (alpha < 0.02 || !shownGroup) return;
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const pad = narrow.matches ? 8 : 14;
+    const items: Callout[] = shownGroup.flatMap((name) => {
+      const p = parts.get(name), el = labelEls.get(name);
+      if (!p || !el) return [];
+      new THREE.Box3().setFromObject(p.node).getCenter(tmp);
+      tmp.project(camera);
+      return [{ el, ax: ((tmp.x + 1) / 2) * W, ay: ((1 - tmp.y) / 2) * H, w: el.offsetWidth, h: el.offsetHeight, y: 0 }];
+    });
+    const mid = items.reduce((s, it) => s + it.ax, 0) / Math.max(1, items.length);
+    const gap = 10, top = narrow.matches ? 40 : 90, bottom = H - (narrow.matches ? 30 : 50);
+    for (const side of [-1, 1]) {
+      const col = items.filter((it) => (side < 0 ? it.ax < mid : it.ax >= mid)).sort((a, b) => a.ay - b.ay);
+      let y = top;
+      for (const it of col) {
+        it.y = Math.max(y, it.ay - it.h / 2);
+        y = it.y + it.h + gap;
+      }
+      const over = y - gap - bottom;
+      if (over > 0) col.forEach((it) => (it.y -= over));
+      for (const it of col) {
+        const x = side < 0 ? pad : W - pad - it.w;
+        it.el.style.transform = `translate(${x}px, ${it.y}px)`;
+        const lx = side < 0 ? x + it.w : x, ly = it.y + it.h / 2;
+        const elbow = side < 0 ? lx + 16 : lx - 16;
+        leaders.insertAdjacentHTML(
+          "beforeend",
+          `<polyline points="${lx},${ly} ${elbow},${ly} ${it.ax},${it.ay}" fill="none" stroke="currentColor" stroke-width="1.3" opacity="${alpha}"/>` +
+            `<circle cx="${it.ax}" cy="${it.ay}" r="3.2" fill="var(--accent)" stroke="currentColor" stroke-width="1.2" opacity="${alpha}"/>`,
+        );
+      }
+    }
+  }
+
+  // Step colours and captions.
+  let shownStep = -1;
+  function setStep(i: number) {
+    if (i === shownStep) return;
+    shownStep = i;
+    const [bg, fg, accent] = steps[i].ink;
+    root.style.setProperty("--bg", bg);
+    root.style.setProperty("--fg", fg);
+    root.style.setProperty("--accent", accent);
+    stepEls.forEach((s, j) => s.classList.toggle("on", j === i));
+    stepNo.textContent = String(i).padStart(2, "0");
+    figNo.textContent = `FIG. ${String(i).padStart(2, "0")}`;
+    figName.textContent = stepEls[i].querySelector(".kicker")?.textContent?.toUpperCase() ?? "";
+    hex.classList.toggle("on", steps[i].hex);
+  }
+  setStep(0);
+
+  const startR = new THREE.Vector3(0, 0, 0);
+  const startL = new THREE.Vector3(-9, 3, 1);
+  const startQ = new THREE.Quaternion();
+  const above = new THREE.Vector3();
+  const lift = new THREE.Vector3(0, 3.4, 0);
+  const up = new THREE.Vector3(0, 1, 0);
+  const sway = new THREE.Quaternion();
+  const target = new THREE.Vector3(), target2 = new THREE.Vector3();
+  const dirBud = new THREE.Vector3(0.3, 0.3, 1).normalize();
+  const dirCase = new THREE.Vector3(0.45, 0.85, 1).normalize();
+  const view = new THREE.Vector3();
   const clock = new THREE.Clock();
+
+  // Carries a bud from where it floats to its well: up over the well first, then straight down onto the pins.
+  function dock(obj: THREE.Object3D, from: THREE.Vector3, to: { p: THREE.Vector3; q: THREE.Quaternion }, d: number) {
+    above.copy(to.p).add(lift);
+    if (d < 0.65) {
+      const k = ss(0, 0.65, d);
+      obj.position.lerpVectors(from, above, k);
+      obj.quaternion.slerpQuaternions(startQ, to.q, k);
+    } else {
+      obj.position.lerpVectors(above, to.p, ss(0.65, 1, d));
+      obj.quaternion.copy(to.q);
+    }
+  }
+
   function frame() {
     requestAnimationFrame(frame);
     if (!ready) return;
     const t = clock.getElapsedTime();
-    const step = steps[active] ?? steps[0];
-    const wantExplode = active >= 1 && active <= 5 ? 1 : 0;
-    const wantCase = step.caseModel && caseGroup.children.length ? 1 : 0;
-    explode += (wantExplode - explode) * 0.06;
-    caseMix += (wantCase - caseMix) * 0.07;
-    hex.classList.toggle("on", step.hex);
+    const p = progress();
+    const i = Math.min(steps.length - 1, Math.max(0, Math.round(p)));
+    setStep(i);
 
-    parts.forEach((p) => p.node.position.copy(p.home).addScaledVector(p.offset, explode));
-    const spin = reduced ? 0 : Math.sin(t * 0.35) * 0.35 * (1 - explode);
-    bud.rotation.y = spin + (step.hex && !reduced ? t * 0.4 : 0) * (1 - explode);
-    bud.visible = caseMix < 0.98;
-    caseGroup.visible = caseMix > 0.02;
-    bud.scale.setScalar(1 - caseMix * 0.6);
-    caseGroup.scale.setScalar(0.4 + caseMix * 0.6);
-    caseGroup.rotation.y = reduced ? 0 : Math.sin(t * 0.25) * 0.3;
+    // Phases, all read straight off the scroll position.
+    const explode = ss(0.45, 1.2, p) * (1 - ss(5.45, 6.1, p));
+    const caseIn = caseReady ? ss(6.45, 7.0, p) : 0;
+    const dR = caseReady ? ss(6.75, 7.4, p) : 0;
+    const dL = caseReady ? ss(6.9, 7.55, p) : 0;
+    const shut = caseReady ? ss(7.6, 8.1, p) : 0;
 
-    // Fade everything but the parts this step is about.
-    const group = step.group;
-    bud.traverse((o) => {
+    parts.forEach((pt) => pt.node.position.copy(pt.home).addScaledVector(pt.offset, explode));
+
+    // While floating, the bud turns slowly (faster on the door step, while it talks).
+    const spin = reduced ? 0 : (Math.sin(t * 0.35) * 0.4 + (steps[i].hex ? t * 0.5 : 0)) * (1 - explode);
+    startQ.setFromAxisAngle(up, spin);
+    if (dR > 0) dock(budR, startR, dockR, dR);
+    else budR.position.copy(startR), budR.quaternion.copy(startQ);
+    budL.visible = dL > 0.001;
+    if (budL.visible) dock(budL, startL, dockL, dL);
+
+    // The case rises in from below with its lid open; then the lid swings shut and the LED lights.
+    caseRoot.visible = caseIn > 0.001;
+    caseRoot.position.y = (1 - caseIn) * -7;
+    fade(caseRoot, caseIn > 0.001 ? 1 : 0, 0.2);
+    if (hinge) hinge.rotation.x = LID_OPEN * (1 - shut);
+    if (led) led.emissive.setHex(0x4be08a).multiplyScalar(shut > 0.98 ? 0.6 + 0.4 * Math.sin(t * 4) : 0);
+    // Shut, the whole thing sways a little, buds and all.
+    const yaw = reduced ? 0 : shut * Math.sin(t * 0.3) * 0.35;
+    caseRoot.rotation.y = yaw;
+    if (yaw) {
+      sway.setFromAxisAngle(up, yaw);
+      for (const b of [budR, budL]) b.position.applyQuaternion(sway), b.quaternion.premultiply(sway);
+    }
+
+    // Light only the parts this step is about.
+    const group = explode > 0.5 ? steps[i].group : null;
+    budR.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
-      // A node with one primitive loads as a Mesh carrying the node's name.
       const owner = parts.has(mesh.name) ? mesh.name : mesh.parent?.name ?? "";
-      const lit = !group || group.includes(owner);
+      const lit = !group || group.includes(owner) || (owner === "Cell_label" && group.includes("Li-ion_cell")) ||
+        (owner === "Pogo_contact_1" && group.includes("Pogo_contact_0"));
       const m = mesh.material as THREE.MeshToonMaterial;
-      m.opacity += ((lit ? 1 : 0.13) - m.opacity) * 0.12;
+      m.opacity += ((lit ? 1 : 0.12) - m.opacity) * 0.12;
       m.depthWrite = m.opacity > 0.6;
       mesh.children.forEach((c) => (((c as THREE.LineSegments).material as THREE.LineBasicMaterial).opacity = m.opacity));
     });
 
-    const b = new THREE.Box3(
-      budBox.min.clone().lerp(explodedBox.min, explode),
-      budBox.max.clone().lerp(explodedBox.max, explode),
-    );
-    const camBox = caseMix > 0.5 && !caseBox.isEmpty() ? caseBox : b;
-    camBox.getCenter(target);
-    const d = fit(camBox);
-    const viewDir = dir.clone().lerp(caseDir, caseMix).normalize();
-    camera.position.copy(target).addScaledVector(viewDir, d);
+    // Camera: frame the bud (growing with the explode), then the open case from above.
+    const b = new THREE.Box3(budBox.min.clone().lerp(explodedBox.min, explode), budBox.max.clone().lerp(explodedBox.max, explode));
+    b.getCenter(target);
+    let d = fit(b, THREE.MathUtils.lerp(1.75, narrow.matches ? 1.67 : 1.57, explode));
+    const k = caseReady ? ss(6.45, 7.1, p) : 0;
+    if (k > 0) {
+      // Open, the lid makes the case tall; shut, it's compact, so the framing follows the lid.
+      const cb = new THREE.Box3(caseBox.min.clone().lerp(shutBox.min, shut), caseBox.max.clone().lerp(shutBox.max, shut));
+      cb.getCenter(target2);
+      target.lerp(target2, k);
+      d = THREE.MathUtils.lerp(d, fit(cb, 1.3 + 0.25 * shut), k);
+    }
+    view.copy(dirBud).lerp(dirCase, k).normalize();
+    camera.position.copy(target).addScaledVector(view, d);
     camera.lookAt(target);
     renderer.render(scene, camera);
 
-    // Labels for the lit parts.
-    labels.innerHTML = "";
-    if (group && explode > 0.8) {
-      const rect = stage.getBoundingClientRect();
-      let n = 0;
-      for (const name of group) {
-        const p = parts.get(name);
-        if (!p || name === "Cell_label") continue;
-        new THREE.Box3().setFromObject(p.node).getCenter(tmp);
-        tmp.project(camera);
-        const el = document.createElement("div");
-        el.style.left = `${((tmp.x + 1) / 2) * rect.width}px`;
-        // Alternate above and below so neighbours don't collide.
-        el.style.top = `${((1 - tmp.y) / 2) * rect.height + (n++ % 2 ? 26 : -30)}px`;
-        el.innerHTML = `<span>${name.replace(/_/g, " ").replace(/ \d$/, "")}</span>`;
-        labels.appendChild(el);
-      }
-    }
+    setLabels(group);
+    layoutLabels(ss(0.75, 0.95, explode));
   }
   frame();
 </script>

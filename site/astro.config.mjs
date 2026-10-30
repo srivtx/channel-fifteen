@@ -1,7 +1,7 @@
 import { defineConfig } from "astro/config";
 
 // Served from GitHub Pages at /<repo>; change BASE if the repository is named differently.
-const BASE = "/earshot-field-manual";
+const BASE = "/channel-fifteen";
 
 // The chapters are written to read well on GitHub (../figures/x.svg, 04-name.md);
 // rewrite those links for the website.

@@ -224,7 +224,6 @@ assembled = collection("Bud assembled")
 assembled_parts = build_bud(assembled, explode=False)
 exploded = collection("Bud exploded")
 parts = build_bud(exploded, explode=True)
-case = collection("Case with buds")
 
 
 def rounded_box(name, loc, size, bevel, mat, coll):
@@ -238,27 +237,134 @@ def rounded_box(name, loc, size, bevel, mat, coll):
     return obj
 
 
-rounded_box("Case base", (0, 0, -0.75), (6.2, 3.2, 1.9), 0.75, "shell_dark", case)
-rounded_box("Case well", (0, -0.15, 0.16), (4.8, 1.9, 0.12), 0.08, "ink", case)
-lid = rounded_box("Case lid", (0, 1.55, 1.15), (6.2, 0.9, 2.8), 0.42, "shell", case)
-lid.rotation_euler = (math.radians(-18), 0, 0)
-rounded_box("Hall sensor", (0, -0.9, 0.24), (0.36, 0.2, 0.06), 0.02, "vermilion", case)
-rounded_box("Case LED", (0, -1.62, -0.6), (0.18, 0.04, 0.18), 0.02, "green", case)
-# Two buds standing stem-down in the case, nozzles toward the hinge.
-for side, x in (("L", -1.3), ("R", 1.3)):
-    bud = collection(f"Case bud {side}")
-    build_bud(bud, explode=False)
+# The case: a pebble split into a body and a hinged lid. The buds stand stem-down in wells
+# cut to their shape, nozzles toward the hinge. Everything is in the case's own units, the
+# same as the bud's, so the website can drop the bud model straight into a well.
+CASE_HALF = (2.85, 1.95, 2.15)
+CASE_MID = -0.45
+SPLIT = -0.35
+HINGE = Vector((0, 1.82, SPLIT))
+DOCKS = {"L": Vector((-1.3, -0.22, 0)), "R": Vector((1.3, -0.22, 0))}
+DOCK_ROT = (0, math.radians(-14), math.radians(-90))  # stem straight down, nozzle to the hinge
+case_body = collection("Case body")
+case_lid = collection("Case lid")
+case_buds = collection("Case buds")
+
+
+def baked(obj):
+    """Applies an object's modifiers to its mesh."""
+    deps = bpy.context.evaluated_depsgraph_get()
+    mesh = bpy.data.meshes.new_from_object(obj.evaluated_get(deps))
+    obj.modifiers.clear()
+    old, obj.data = obj.data, mesh
+    bpy.data.meshes.remove(old)
+    return obj
+
+
+def pebble_half(name, coll, mat, below):
+    bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
+    obj = bpy.context.active_object
+    obj.data.transform(Matrix.Diagonal(Vector((*CASE_HALF, 1))))
+    bev = obj.modifiers.new("round", "BEVEL")
+    bev.width, bev.segments, bev.limit_method = 1.15, 6, "NONE"
+    obj.modifiers.new("smooth", "SUBSURF").levels = 2
+    baked(obj)
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.transform(Matrix.Translation((0, 0, CASE_MID)))
+    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    cut = bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(0, 0, SPLIT), plane_no=(0, 0, 1),
+                                 clear_outer=below, clear_inner=not below)
+    rim = [e for e in cut["geom_cut"] if isinstance(e, bmesh.types.BMEdge)]
+    bmesh.ops.triangle_fill(bm, use_beauty=True, use_dissolve=True, edges=rim)
+    bm.to_mesh(obj.data)
+    bm.free()
+    smooth(obj)
+    obj.data.polygons.foreach_set("use_smooth", [abs(p.normal.z) < 0.999 for p in obj.data.polygons])
+    return link(obj, coll, name, mat)
+
+
+body = pebble_half("Case body", case_body, "cobalt", True)
+# One bud per well, posed exactly where it docks; its shape is what the wells are cut from.
+for side, at in DOCKS.items():
     holder = bpy.data.objects.new(f"Case bud {side}", None)
-    case.objects.link(holder)
-    for obj in list(bud.objects):
-        bud.objects.unlink(obj)
-        case.objects.link(obj)
+    case_buds.objects.link(holder)
+    tmp = collection("tmp bud")
+    build_bud(tmp, explode=False)
+    for obj in list(tmp.objects):
+        tmp.objects.unlink(obj)
+        case_buds.objects.link(obj)
         obj.parent = holder
-    bpy.data.collections.remove(bud)
-    holder.location = (x, -0.1, 1.55)
-    holder.rotation_euler = (0, 0, math.radians(-90 if side == "R" else -90))
-    if side == "L":
-        holder.scale = (1, -1, 1)
+    bpy.data.collections.remove(tmp)
+    holder.location, holder.rotation_euler = at, DOCK_ROT
+    dock = bpy.data.objects.new(f"Dock {side}", None)
+    case_body.objects.link(dock)
+    dock.location, dock.rotation_euler = at, DOCK_ROT
+bpy.context.view_layer.update()
+
+
+def base_name(o):
+    return o.name.split(".")[0]
+
+
+cutters = []
+for side in DOCKS:
+    kids = {o for o in case_buds.objects if o.parent and o.parent.name == f"Case bud {side}"}
+    for o in case_buds.objects:
+        o.select_set(False)
+    head = [o for o in kids if base_name(o) in ("Front shell", "Back shell", "Nozzle", "Ear tip")]
+    stem = [o for o in kids if base_name(o) in ("Stem", "Stem cap")]
+    for group, kind in ((head, "head"), (stem, "stem")):
+        pts = [o.matrix_world @ Vector(c) for o in group for c in o.bound_box]
+        lo = Vector([min(p[i] for p in pts) for i in range(3)])
+        hi = Vector([max(p[i] for p in pts) for i in range(3)])
+        mid, size = (lo + hi) / 2, hi - lo
+        if kind == "head":
+            c = add("sphere", case_body, "cutter", "ink", mid, scale=(size.x / 2 + 0.07, size.y / 2 + 0.07, size.z / 2 + 0.07))
+        else:
+            top = SPLIT + 0.6
+            c = add("cyl", case_body, "cutter", "ink", (mid.x, mid.y, (lo.z - 0.06 + top) / 2),
+                    scale=(size.x / 2 + 0.08, size.y / 2 + 0.08, (top - lo.z + 0.06) / 2), radius=1, depth=2)
+        cutters.append(c)
+for c in cutters:
+    mod = body.modifiers.new("well", "BOOLEAN")
+    mod.operation, mod.solver, mod.object = "DIFFERENCE", "EXACT", c
+    mod.material_mode = "TRANSFER"
+baked(body)
+for c in cutters:
+    bpy.data.objects.remove(c, do_unlink=True)
+
+# Charging pads at the bottom of each stem well, the Hall sensor, the LED and the hinge barrel.
+for o in [o for o in case_buds.objects if base_name(o).startswith("Pogo contact")]:
+    p = o.matrix_world.translation
+    add("cyl", case_body, "Charge pad", "gold", (p.x, p.y, p.z - 0.07), radius=0.07, depth=0.04)
+rounded_box("Hall sensor", (0, -1.05, SPLIT + 0.01), (0.34, 0.2, 0.05), 0.02, "vermilion", case_body)
+rounded_box("Case LED", (0, -CASE_HALF[1] - 0.005, -1.15), (0.22, 0.05, 0.22), 0.03, "green", case_body)
+add("cyl", case_body, "Hinge", "steel", HINGE + Vector((0, 0.06, -0.02)), (0, math.radians(90), 0), radius=0.09, depth=1.6)
+
+lid = pebble_half("Case lid", case_lid, "shell", False)
+lid.data.transform(Matrix.Translation((0, 0, 0.012)))  # a hair of a seam
+# "15" in a 5x7 pixel face on top of the lid: the channel the whole story is about.
+GLYPHS = {"1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+          "5": ["11111", "10000", "11110", "00001", "00001", "10001", "01110"]}
+px = 0.085
+top = CASE_MID + CASE_HALF[2]
+for gi, ch in enumerate("15"):
+    for r, row in enumerate(GLYPHS[ch]):
+        for c, bit in enumerate(row):
+            if bit == "1":
+                x = (gi * 6 + c - 5) * px
+                y = (3 - r) * px
+                add("cube", case_lid, "Lid pixel", "vermilion", (x, y, top + 0.005), scale=(px * 0.46, px * 0.46, 0.02))
+# The lid turns about the hinge: its pixels and shell share one origin there.
+lid_parts = list(case_lid.objects)
+pivot = bpy.data.objects.new("Lid hinge", None)
+case_lid.objects.link(pivot)
+pivot.location = HINGE
+for o in lid_parts:
+    o.parent = pivot
+    o.matrix_parent_inverse = Matrix.Translation(-HINGE)
+pivot.rotation_euler.x = math.radians(-105)  # open for the plate; the website closes it
 
 # ---------------------------------------------------------------- camera and look
 
@@ -294,10 +400,10 @@ def aim(direction, target, scale):
     cam_data.ortho_scale = scale
 
 
-def only(coll):
+def only(*colls):
     for c in scene.collection.children:
-        c.hide_render = c is not coll
-        c.hide_viewport = c is not coll
+        c.hide_render = c not in colls
+        c.hide_viewport = c not in colls
 
 
 def anchors(parts, name):
@@ -315,7 +421,7 @@ def anchors(parts, name):
 
 
 def render(name, coll, size, direction, target, scale):
-    only(coll)
+    only(*(coll if isinstance(coll, tuple) else (coll,)))
     scene.render.resolution_x, scene.render.resolution_y = size
     scene.render.resolution_percentage = 100
     aim(direction, target, scale)
@@ -325,7 +431,9 @@ def render(name, coll, size, direction, target, scale):
 
 render("assembled", assembled, (1200, 1200), (0.3, -1, 0.3), (-0.1, 0, -0.6), 4.0)
 anchors(assembled_parts, "assembled")
-render("case", case, (1600, 1200), (0.25, -1, 0.7), (0, 0.3, 0.6), 8.8)
+render("case", (case_body, case_lid, case_buds), (1600, 1200), (0.3, -1, 0.75), (0, 0.6, 0.2), 9.4)
+anchors({"lid": [lid], "bud": [o for o in case_buds.objects if o.name.startswith("Back shell")][:1],
+         "hall": [bpy.data.objects["Hall sensor"]], "led": [bpy.data.objects["Case LED"]], "body": [body]}, "case")
 render("exploded", exploded, (2400, 1500), (0.5, -1, 0.42), (0.2, 0, -0.75), 11.2)
 exploded_anchors = anchors(parts, "exploded")
 

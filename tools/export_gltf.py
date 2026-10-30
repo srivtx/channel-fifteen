@@ -1,4 +1,4 @@
-# Exports the earbud and the case as glTF for the website's 3D story, plus each part's
+# Exports the earbud and the case (body and lid) as glTF for the website's 3D story, plus each part's
 # explode offset. Run in Blender after earbud_blender.py:
 #     exec(open("/path/to/earshot-field-manual/tools/export_gltf.py").read())
 
@@ -39,7 +39,12 @@ def export(collection, filename):
 for c in scene.collection.children:
     c.hide_viewport = False
 export("Bud assembled", "bud.glb")
-export("Case with buds", "case.glb")
+export("Case body", "case_body.glb")  # with the two dock empties the buds fly to
+hinge = bpy.data.objects["Lid hinge"]
+opened = hinge.rotation_euler.x
+hinge.rotation_euler.x = 0  # exported shut; the site swings it open about the hinge
+export("Case lid", "case_lid.glb")
+hinge.rotation_euler.x = opened
 
 assembled = {base(o.name): o.location.copy() for o in bpy.data.collections["Bud assembled"].objects}
 offsets = {}

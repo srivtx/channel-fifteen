@@ -260,11 +260,11 @@ def catalogue(n):
 
 
 CASE_POINTS = [
-    ("A", "Lid (magnet keeps it shut)", 700, 160),
-    ("B", "Buds sit stem-down in wells", 560, 520),
-    ("C", "Lid Hall sensor: lid open → wake buds", 740, 760),
-    ("D", "Charge LED", 715, 970),
-    ("E", "Case cell + charger IC (inside)", 400, 900),
+    ("A", "Lid (magnet keeps it shut)", "lid"),
+    ("B", "Buds sit stem-down in wells", "bud"),
+    ("C", "Hall sensor: lid open → wake buds", "hall"),
+    ("D", "Charge LED", "led"),
+    ("E", "Case cell + charger IC (inside)", "body"),
 ]
 
 
@@ -276,7 +276,10 @@ def case(n):
     ox, oy = 70, 130
     sc = 640 / (box[2] - box[0])
     p.add(image(uri, ox, oy, w, h))
-    for i, (letter, label, px, py) in enumerate(CASE_POINTS):
+    with open(os.path.join(R, "case.json")) as f:
+        at = json.load(f)["parts"]
+    for i, (letter, label, key) in enumerate(CASE_POINTS):
+        px, py = at[key]
         ax, ay = ox + (px - box[0]) * sc, oy + (py - box[1]) * sc
         p.add(leader(ax, ay, 780, 160 + i * 64, letter, label))
     p.add(para(780, 520, "The case has its own battery, a charger and a small controller. It tops the buds up "

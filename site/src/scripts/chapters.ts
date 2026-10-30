@@ -31,5 +31,6 @@ export function blurb(c: Chapter) {
   const lines = (c.body ?? "").split("\n");
   const story = lines.find((l) => l.startsWith("> **In the story:**"));
   const text = story ?? lines.find((l) => l && !l.startsWith("#") && !l.startsWith("!") && !l.startsWith(">")) ?? "";
-  return text.replace(/^> \*\*In the story:\*\*\s*/, "").replace(/[*`]/g, "").slice(0, 210);
+  const plain = text.replace(/^> \*\*In the story:\*\*\s*/, "").replace(/[*`]/g, "").slice(0, 210);
+  return plain.charAt(0).toUpperCase() + plain.slice(1);
 }

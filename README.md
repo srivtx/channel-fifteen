@@ -1,6 +1,8 @@
-<p align="center"><img src="figures/01-cover.svg" alt="Earshot field manual" width="720"></p>
+<p align="center"><img src="figures/01-cover.svg" alt="Channel Fifteen, the Earshot field manual" width="720"></p>
 
-# Earshot field manual
+# Channel Fifteen
+
+*The Earshot field manual. Named for RFCOMM channel 15, the hidden serial door the whole story is about.*
 
 **How a Mac learned to talk to a pair of earbuds — told as a story, explained from first principles.**
 
@@ -8,7 +10,7 @@
 
 Every byte in the plates is real — captured from the buds or computed with Earshot's own arithmetic. The earbud was modelled in Blender for this manual, and the website tells the story in 3D with that model.
 
-**Website:** the same chapters with a scroll-driven 3D story, a live packet decoder and an animated hopping grid — see [`site/`](site/).
+**Website: [srivtx.github.io/channel-fifteen](https://srivtx.github.io/channel-fifteen/)** — the same chapters as a scroll-driven 3D story: the Blender earbud pulled apart part by part, then docked in its case as the lid shuts, plus a live packet decoder and an animated hopping grid. Source in [`site/`](site/).
 
 ## Contents
 
@@ -39,7 +41,7 @@ Every byte in the plates is real — captured from the buds or computed with Ear
 #    exec(open("tools/export_gltf.py").read())       → site/public/models/*.glb
 # 2. The 43 plates (Python 3 + Pillow):
 python3 tools/build_figures.py
-tools/preview.sh /tmp/plates figures/*.svg           # optional PNG previews via headless Chrome
+zsh tools/preview.sh /tmp/plates figures/*.svg       # optional PNG previews via headless Chrome
 # 3. The website (Astro + three.js):
 cd site && npm install && npm run dev
 ```
@@ -51,7 +53,7 @@ chapters/   the manual, one Markdown file per chapter (reads on GitHub, rendered
 figures/    43 SVG plates, generated
 renders/    Blender renders used by the plates
 tools/      plate kit (plate.py), figure modules (figs_*.py), Blender scripts
-site/       Astro website: 3D story, chapters, packet decoder
+site/       Astro website: byte-drawn hero, 3D story, chapters, packet decoder
 ```
 
 ## Credits
