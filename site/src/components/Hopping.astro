@@ -1,0 +1,62 @@
+---
+// Bluetooth Classic hopping across 79 channels, with a Wi-Fi network in the way and AFH to toggle.
+---
+
+<div class="widget hop">
+  <h4>Live · frequency hopping (slowed ~200×)</h4>
+  <canvas width="900" height="320"></canvas>
+  <div class="bar">
+    <button class="btn" data-afh>AFH: off</button>
+    <button class="btn" data-wifi>Wi-Fi channel 6: on</button>
+    <span class="mono stats"></span>
+  </div>
+</div>
+
+<style>
+  .hop canvas { width: 100%; height: auto; display: block; border-radius: 8px; border: 1.5px solid var(--text); background: var(--paper); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .stats { font-size: 13px; color: var(--muted); margin-left: auto; }
+</style>
+
+<script>
+  for (const w of document.querySelectorAll<HTMLElement>(".hop")) {
+    const canvas = w.querySelector("canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const afhBtn = w.querySelector<HTMLButtonElement>("[data-afh]")!;
+    const wifiBtn = w.querySelector<HTMLButtonElement>("[data-wifi]")!;
+    const stats = w.querySelector(".stats")!;
+    const cols = 90, rows = 79;
+    const cw = canvas.width / cols, ch = canvas.height / rows;
+    let afh = false, wifi = true;
+    const wifiBand = (c: number) => c >= 24 && c <= 46;
+    const grid: { ch: number; lost: boolean }[] = [];
+    let sent = 0, lost = 0;
+    afhBtn.onclick = () => { afh = !afh; afhBtn.textContent = `AFH: ${afh ? "on" : "off"}`; afhBtn.classList.toggle("on", afh); };
+    wifiBtn.onclick = () => { wifi = !wifi; wifiBtn.textContent = `Wi-Fi channel 6: ${wifi ? "on" : "off"}`; };
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    function tick() {
+      const allowed = [...Array(79).keys()].filter((c) => !(afh && wifi && wifiBand(c)));
+      const c = allowed[Math.floor(Math.random() * allowed.length)];
+      const hit = wifi && wifiBand(c) && Math.random() < 0.7;
+      grid.push({ ch: c, lost: hit });
+      if (grid.length > cols) grid.shift();
+      sent++;
+      if (hit) lost++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (wifi) {
+        ctx.fillStyle = css("--ochre");
+        ctx.globalAlpha = 0.25;
+        ctx.fillRect(0, (78 - 46) * ch, canvas.width, 23 * ch);
+        ctx.globalAlpha = 1;
+      }
+      grid.forEach((g, x) => {
+        ctx.fillStyle = g.lost ? css("--verm") : x === grid.length - 1 ? css("--cobalt") : css("--text");
+        ctx.beginPath();
+        ctx.roundRect(x * cw + 1, (78 - g.ch) * ch, cw - 2, Math.max(ch, 3), 2);
+        ctx.fill();
+      });
+      stats.textContent = `${sent} slots · ${lost} lost (${Math.round((lost / sent) * 100)} %) → resent on the next hop`;
+    }
+    setInterval(tick, 120);
+  }
+</script>

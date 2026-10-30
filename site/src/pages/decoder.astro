@@ -1,0 +1,18 @@
+---
+import Base from "../layouts/Base.astro";
+import PacketDecoder from "../components/PacketDecoder.astro";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Base title="Packet decoder — Earshot field manual">
+  <main class="wrap prose" style="padding: 40px 16px 80px">
+    <p class="kicker">tool</p>
+    <h1>Packet decoder</h1>
+    <p>
+      Paste bytes from a realme, OPPO or OnePlus bud — from Earshot's report, or the examples below — and every
+      field is named and explained. The rules are the ones in <a href={`${base}/chapters/07-opo-byte-by-byte/`}>chapter 07</a>
+      and <a href={`${base}/chapters/08-integrity/`}>chapter 08</a>.
+    </p>
+    <PacketDecoder />
+  </main>
+</Base>

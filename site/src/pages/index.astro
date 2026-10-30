@@ -1,0 +1,67 @@
+---
+import Base from "../layouts/Base.astro";
+import BudStory from "../components/BudStory.astro";
+import { chapters, number, name, firstPlate, blurb } from "../scripts/chapters";
+
+const all = await chapters();
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Base title="Earshot field manual">
+  <section class="hero wrap">
+    <p class="kicker">REF // RFCOMM CH 15 → NOW</p>
+    <h1 class="pixel">EARSHOT<br /><span>FIELD MANUAL</span></h1>
+    <p class="lede">
+      How a Mac learned to talk to a pair of earbuds — told as a story, explained from first principles:
+      sound, electrons, radio, Bluetooth, bytes, protocols, Swift and shipping.
+    </p>
+    <div class="meta mono">
+      <span>13 chapters</span><span>43 plates</span><span>1 earbud, modelled in Blender</span><span>7 brands</span>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+    <p class="scroll mono">scroll ↓</p>
+  </section>
+
+  <BudStory />
+
+  <section id="chapters" class="wrap chapters">
+    <p class="kicker">contents</p>
+    <h2 class="pixel">THE CHAPTERS</h2>
+    <div class="grid">
+      {all.map((c) => {
+        const plate = firstPlate(c);
+        return (
+          <a class="card" href={`${base}/chapters/${c.id}/`}>
+            {plate && <img src={`${base}/figures/${plate}`} alt="" loading="lazy" />}
+            <div class="body">
+              <span class="num pixel">{number(c)}</span>
+              <h3>{name(c)}</h3>
+              <p>{blurb(c)}</p>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { padding: 12vh 16px 6vh; min-height: 88vh; display: flex; flex-direction: column; justify-content: center; }
+  .hero h1 { font-size: clamp(54px, 12vw, 150px); line-height: 0.92; margin: 18px 0 22px; }
+  .hero h1 span { color: var(--verm); font-size: 0.42em; letter-spacing: 0.04em; }
+  .lede { max-width: 640px; font-size: clamp(18px, 2.2vw, 22px); color: var(--muted); }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; font-size: 12px; }
+  .meta span { border: 1.5px solid var(--text); border-radius: 999px; padding: 4px 10px; }
+  .ruler { height: 14px; margin-top: 40px; background: repeating-linear-gradient(90deg, var(--text) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, var(--text) 0 1.5px, transparent 1.5px 60px); background-size: 100% 6px, 100% 14px; background-repeat: no-repeat; background-position: bottom; opacity: 0.6; }
+  .scroll { margin-top: 18px; color: var(--muted); font-size: 12px; }
+  .chapters { padding: 12vh 16px 10vh; }
+  .chapters h2 { font-size: clamp(34px, 6vw, 64px); margin: 8px 0 30px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .card { display: flex; flex-direction: column; text-decoration: none; border: 1.5px solid var(--text); border-radius: 14px; overflow: hidden; background: var(--card); transition: transform 0.2s, box-shadow 0.2s; }
+  .card:hover { transform: translateY(-3px); box-shadow: 6px 6px 0 var(--text); color: inherit; }
+  .card img { aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-bottom: 1.5px solid var(--text); }
+  .card .body { padding: 14px 16px 18px; }
+  .card .num { color: var(--verm); font-size: 22px; }
+  .card h3 { margin: 4px 0 6px; font-size: 19px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+</style>

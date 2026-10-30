@@ -1,0 +1,40 @@
+---
+import { render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import PacketDecoder from "../../components/PacketDecoder.astro";
+import Hopping from "../../components/Hopping.astro";
+import ExplodeViewer from "../../components/ExplodeViewer.astro";
+import { chapters, title, number, name } from "../../scripts/chapters";
+
+export async function getStaticPaths() {
+  const all = await chapters();
+  return all.map((entry, i) => ({ params: { slug: entry.id }, props: { entry, prev: all[i - 1], next: all[i + 1], all } }));
+}
+
+const { entry, prev, next, all } = Astro.props;
+const { Content } = await render(entry);
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Base title={`${title(entry)} — Earshot field manual`}>
+  <div class="chapter">
+    <aside class="toc">
+      {all.map((c) => (
+        <a href={`${base}/chapters/${c.id}/`} class={c.id === entry.id ? "on" : ""}><b>{number(c)}</b>{name(c)}</a>
+      ))}
+      <a href={`${base}/decoder/`}><b>⌁</b>Packet decoder</a>
+    </aside>
+    <main>
+      <article class="prose">
+        <Content />
+        {entry.id.startsWith("01") && <ExplodeViewer />}
+        {entry.id.startsWith("03") && <Hopping />}
+        {entry.id.startsWith("07") && <PacketDecoder />}
+      </article>
+      <nav class="pager prose">
+        {prev ? <a href={`${base}/chapters/${prev.id}/`}>← {name(prev)}</a> : <span />}
+        {next ? <a href={`${base}/chapters/${next.id}/`}>{name(next)} →</a> : <a href={`${base}/`}>back to the story ↑</a>}
+      </nav>
+    </main>
+  </div>
+</Base>

@@ -1,0 +1,296 @@
+---
+// The landing page's scroll story: the real Blender model, assembled, pulled apart,
+// explained part by part, put back together, then docked in its case.
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const steps = [
+  {
+    kicker: "00 · the problem",
+    title: "A pair of earbuds that wouldn't talk to a Mac",
+    text: "On a phone, realme Link shows each bud's battery and changes noise cancelling, EQ, spatial audio and taps. On a Mac: nothing. The buds play music, and every setting is invisible. This is the story of fixing that, from the electrons up.",
+  },
+  {
+    kicker: "01 · anatomy",
+    title: "It's a computer that fits in your ear",
+    text: "Pull one apart along its axis and you find a speaker, three microphones, sensors, a battery, a radio and a processor with memory. Every setting Earshot changes ends up somewhere in here.",
+  },
+  {
+    kicker: "sound",
+    title: "Magnet, coil, diaphragm",
+    text: "Current through the voice coil pushes against the magnet, the diaphragm moves, and air moves with it. The ear tip seals it all in — without the seal there is no bass and nothing for noise cancelling to work with.",
+    group: ["Ear_tip", "Acoustic_mesh", "Diaphragm", "Voice_coil", "Magnet"],
+  },
+  {
+    kicker: "the brain",
+    title: "Settings live in the flash",
+    text: "The Bluetooth SoC is radio, DSP and CPU on one chip. Its firmware reads and writes the flash, where your EQ, noise mode and tap actions are kept — which is why they survive switching to your phone.",
+    group: ["PCB", "Bluetooth_SoC", "Flash", "PMIC"],
+  },
+  {
+    kicker: "senses",
+    title: "Mics, light and touch",
+    text: "A feed-forward mic hears the world, a feedback mic hears your ear canal, a talk mic hears you. Infrared light bouncing off skin says “in ear”. Your finger changes the touch pad's capacitance.",
+    group: ["Feed-forward_mic", "Feedback_mic", "Talk_mic", "IR_wear_sensor", "Touch_pad"],
+  },
+  {
+    kicker: "power & radio",
+    title: "A cell, two pins, an antenna",
+    text: "A tiny lithium-ion cell, charged through two pogo pins, and an antenna tuned to 2.4 GHz in the stem — where 79 channels are hopped 1600 times a second.",
+    group: ["Li-ion_cell", "Cell_label", "Pogo_contact_0", "Pogo_contact_1", "Antenna", "Case_magnet"],
+  },
+  {
+    kicker: "05 · the door",
+    title: "Channel 15: “oppointeraction”",
+    text: "Behind the music sits a hidden serial channel macOS never opens. Earshot opens it and asks, in nine bytes, “how full is your battery?” — and the buds answer: left 10 %.",
+    hex: true,
+  },
+  {
+    kicker: "the case",
+    title: "Open the lid, the buds wake",
+    text: "The case is a computer too: its own cell, a charger, and a Hall sensor that notices the lid. It tells the buds its level, and the buds tell Earshot.",
+    caseModel: true,
+  },
+  {
+    kicker: "read on",
+    title: "Thirteen chapters, forty-three plates",
+    text: "Sound to bits, radio, the Bluetooth stack, macOS, the method, the protocols byte by byte, integrity, seven brands, the app and shipping. Start anywhere.",
+  },
+];
+---
+
+<section id="story" class="story" data-base={base} data-steps={JSON.stringify(steps.map((s) => ({ group: s.group ?? null, hex: !!s.hex, caseModel: !!s.caseModel })))}>
+  <div class="stage">
+    <canvas aria-label="3D model of an earbud"></canvas>
+    <div class="labels"></div>
+    <div class="hex" aria-hidden="true">
+      <span>AA 07 00 00 06 01 00 00 00 →</span>
+      <span class="back">← AA 0D 00 00 06 81 00 06 00 00 02 01 0A 03 00</span>
+      <span>AA 07 00 00 09 01 02 00 00 →</span>
+      <span class="back">← AA 0B 00 00 0C 81 03 04 00 00 01 01 08</span>
+    </div>
+    <div class="loading mono">loading model…</div>
+  </div>
+  <div class="steps">
+    {steps.map((s, i) => (
+      <article class="step" data-i={i}>
+        <p class="kicker">{s.kicker}</p>
+        <h2>{s.title}</h2>
+        <p>{s.text}</p>
+        {i === steps.length - 1 && <a class="btn" href={`${base}/chapters/00-prologue/`}>Start with the prologue →</a>}
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .story { position: relative; display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 32px; max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+  .stage { position: sticky; top: 70px; height: calc(100vh - 90px); grid-column: 2; grid-row: 1; }
+  .stage canvas { width: 100%; height: 100%; display: block; }
+  .steps { grid-column: 1; grid-row: 1; padding: 10vh 0 30vh; }
+  .step { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; opacity: 0.28; transition: opacity 0.4s; }
+  .step.on { opacity: 1; }
+  .step h2 { font: 400 clamp(26px, 3.4vw, 38px)/1.12 var(--pixel); margin: 0.2em 0 0.4em; }
+  .step p:not(.kicker) { color: var(--muted); font-size: 17px; }
+  .step .btn { align-self: flex-start; margin-top: 10px; text-decoration: none; }
+  .labels { position: absolute; inset: 0; pointer-events: none; }
+  .labels :global(div) { position: absolute; transform: translate(-4px, -4px); font: 600 11px var(--mono); white-space: nowrap; color: var(--text); }
+  .labels :global(div) { border-left: 1.5px solid var(--verm); padding-left: 6px; }
+  .labels :global(div span) { background: var(--paper); padding: 2px 5px; border: 1px solid var(--text); border-radius: 4px; }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+  .hex { position: absolute; left: 0; right: 0; top: 18%; display: grid; gap: 12px; opacity: 0; transition: opacity 0.5s; pointer-events: none; font: 600 13px var(--mono); overflow: hidden; }
+  .hex.on { opacity: 1; }
+  .hex span { white-space: nowrap; color: var(--cobalt); animation: flow 6s linear infinite; }
+  .hex span.back { color: var(--verm); animation-direction: reverse; }
+  @keyframes flow { from { transform: translateX(-30%); } to { transform: translateX(60%); } }
+  @media (max-width: 860px) {
+    .story { grid-template-columns: 1fr; }
+    .stage { grid-column: 1; top: 58px; height: 48vh; z-index: 2; background: var(--paper); border-bottom: 1.5px solid var(--text); }
+    .steps { grid-row: 2; padding-top: 4vh; }
+    .step { min-height: 64vh; }
+  }
+  @media (prefers-reduced-motion: reduce) { .hex span { animation: none; } }
+</style>
+
+<script>
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+  const root = document.getElementById("story")!;
+  const base = root.dataset.base ?? "";
+  const steps: { group: string[] | null; hex: boolean; caseModel: boolean }[] = JSON.parse(root.dataset.steps!);
+  const canvas = root.querySelector("canvas")!;
+  const stage = root.querySelector(".stage") as HTMLElement;
+  const labels = root.querySelector(".labels") as HTMLElement;
+  const hex = root.querySelector(".hex") as HTMLElement;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
+  scene.add(new THREE.HemisphereLight(0xfff7e8, 0x8a8170, 1.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+  sun.position.set(4, 8, 6);
+  scene.add(sun);
+
+  // Three flat tones, like a riso print.
+  const tones = new Uint8Array([90, 170, 255]);
+  const gradient = new THREE.DataTexture(tones, 3, 1, THREE.RedFormat);
+  gradient.needsUpdate = true;
+  const ink = new THREE.LineBasicMaterial({ color: 0x1b1a17, transparent: true });
+
+  function stylise(obj: THREE.Object3D) {
+    obj.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const src = mesh.material as THREE.MeshStandardMaterial;
+      mesh.material = new THREE.MeshToonMaterial({ color: src.color ?? new THREE.Color(0xdddddd), gradientMap: gradient, transparent: true });
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 38), ink.clone()));
+    });
+  }
+
+  const bud = new THREE.Group();
+  const caseGroup = new THREE.Group();
+  scene.add(bud, caseGroup);
+  const parts = new Map<string, { node: THREE.Object3D; home: THREE.Vector3; offset: THREE.Vector3 }>();
+  let budBox = new THREE.Box3();
+  let explodedBox = new THREE.Box3();
+  let caseBox = new THREE.Box3();
+  let ready = false;
+
+  const loader = new GLTFLoader();
+  Promise.all([
+    loader.loadAsync(`${base}/models/bud.glb`),
+    fetch(`${base}/models/explode.json`).then((r) => r.json()),
+  ]).then(([gltf, offsets]: [any, Record<string, number[]>]) => {
+    stylise(gltf.scene);
+    bud.add(gltf.scene);
+    budBox = new THREE.Box3().setFromObject(gltf.scene);
+    for (const [name, off] of Object.entries(offsets)) {
+      const node = gltf.scene.getObjectByName(name.replace(/\s/g, "_"));
+      if (node) parts.set(node.name, { node, home: node.position.clone(), offset: new THREE.Vector3(...off) });
+    }
+    parts.forEach((p) => p.node.position.copy(p.home).add(p.offset));
+    explodedBox = new THREE.Box3().setFromObject(gltf.scene);
+    parts.forEach((p) => p.node.position.copy(p.home));
+    root.querySelector(".loading")?.remove();
+    ready = true;
+    loader.loadAsync(`${base}/models/case.glb`).then((c: any) => {
+      stylise(c.scene);
+      caseGroup.add(c.scene);
+      caseBox = new THREE.Box3().setFromObject(c.scene);
+      caseGroup.visible = false;
+    });
+  });
+
+  // Which step is in view.
+  let active = 0;
+  const stepEls = [...root.querySelectorAll<HTMLElement>(".step")];
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          active = Number((e.target as HTMLElement).dataset.i);
+          stepEls.forEach((s) => s.classList.toggle("on", s === e.target));
+        }
+      }
+    },
+    // On narrow screens the stage covers the top half, so read the step just below it.
+    { rootMargin: matchMedia("(max-width: 860px)").matches ? "-62% 0px -30% 0px" : "-45% 0px -45% 0px" },
+  );
+  stepEls.forEach((s) => io.observe(s));
+  stepEls[0]?.classList.add("on");
+
+  function resize() {
+    const { width, height } = stage.getBoundingClientRect();
+    renderer.setSize(width, height, false);
+    camera.aspect = width / Math.max(1, height);
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+  resize();
+
+  // Smoothed state.
+  let explode = 0;
+  let caseMix = 0;
+  const dir = new THREE.Vector3(0.3, 0.32, 1).normalize();
+  const caseDir = new THREE.Vector3(0.25, 0.6, 1).normalize();
+  const target = new THREE.Vector3();
+  const tmp = new THREE.Vector3();
+
+  // Distance at which the box's width and height both fit the view, with a margin.
+  function fit(box: THREE.Box3) {
+    const size = box.getSize(tmp);
+    const half = Math.tan((camera.fov * Math.PI) / 360);
+    const w = Math.max(size.x, size.z) / 2, h = size.y / 2;
+    return Math.max(h / half, w / (half * camera.aspect)) * 1.12 + size.z / 2;
+  }
+
+  const clock = new THREE.Clock();
+  function frame() {
+    requestAnimationFrame(frame);
+    if (!ready) return;
+    const t = clock.getElapsedTime();
+    const step = steps[active] ?? steps[0];
+    const wantExplode = active >= 1 && active <= 5 ? 1 : 0;
+    const wantCase = step.caseModel && caseGroup.children.length ? 1 : 0;
+    explode += (wantExplode - explode) * 0.06;
+    caseMix += (wantCase - caseMix) * 0.07;
+    hex.classList.toggle("on", step.hex);
+
+    parts.forEach((p) => p.node.position.copy(p.home).addScaledVector(p.offset, explode));
+    const spin = reduced ? 0 : Math.sin(t * 0.35) * 0.35 * (1 - explode);
+    bud.rotation.y = spin + (step.hex && !reduced ? t * 0.4 : 0) * (1 - explode);
+    bud.visible = caseMix < 0.98;
+    caseGroup.visible = caseMix > 0.02;
+    bud.scale.setScalar(1 - caseMix * 0.6);
+    caseGroup.scale.setScalar(0.4 + caseMix * 0.6);
+    caseGroup.rotation.y = reduced ? 0 : Math.sin(t * 0.25) * 0.3;
+
+    // Fade everything but the parts this step is about.
+    const group = step.group;
+    bud.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      // A node with one primitive loads as a Mesh carrying the node's name.
+      const owner = parts.has(mesh.name) ? mesh.name : mesh.parent?.name ?? "";
+      const lit = !group || group.includes(owner);
+      const m = mesh.material as THREE.MeshToonMaterial;
+      m.opacity += ((lit ? 1 : 0.13) - m.opacity) * 0.12;
+      m.depthWrite = m.opacity > 0.6;
+      mesh.children.forEach((c) => (((c as THREE.LineSegments).material as THREE.LineBasicMaterial).opacity = m.opacity));
+    });
+
+    const b = new THREE.Box3(
+      budBox.min.clone().lerp(explodedBox.min, explode),
+      budBox.max.clone().lerp(explodedBox.max, explode),
+    );
+    const camBox = caseMix > 0.5 && !caseBox.isEmpty() ? caseBox : b;
+    camBox.getCenter(target);
+    const d = fit(camBox);
+    const viewDir = dir.clone().lerp(caseDir, caseMix).normalize();
+    camera.position.copy(target).addScaledVector(viewDir, d);
+    camera.lookAt(target);
+    renderer.render(scene, camera);
+
+    // Labels for the lit parts.
+    labels.innerHTML = "";
+    if (group && explode > 0.8) {
+      const rect = stage.getBoundingClientRect();
+      let n = 0;
+      for (const name of group) {
+        const p = parts.get(name);
+        if (!p || name === "Cell_label") continue;
+        new THREE.Box3().setFromObject(p.node).getCenter(tmp);
+        tmp.project(camera);
+        const el = document.createElement("div");
+        el.style.left = `${((tmp.x + 1) / 2) * rect.width}px`;
+        // Alternate above and below so neighbours don't collide.
+        el.style.top = `${((1 - tmp.y) / 2) * rect.height + (n++ % 2 ? 26 : -30)}px`;
+        el.innerHTML = `<span>${name.replace(/_/g, " ").replace(/ \d$/, "")}</span>`;
+        labels.appendChild(el);
+      }
+    }
+  }
+  frame();
+</script>

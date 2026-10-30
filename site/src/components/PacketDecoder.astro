@@ -1,0 +1,210 @@
+---
+// Paste realme / OPPO / OnePlus bytes and see every field explained, using the same rules as
+// Earshot's OPOFrameDecoder and OPOParser.
+const presets = [
+  ["battery?", "AA 07 00 00 06 01 00 00 00"],
+  ["battery reply", "AA 0D 00 00 06 81 00 06 00 00 02 01 0A 03 00"],
+  ["set ambient", "AA 0A 00 00 04 04 05 03 00 01 01 02"],
+  ["refused: not worn", "AA 08 00 00 04 84 43 01 00 0E"],
+  ["noise mode reply", "AA 0B 00 00 0C 81 02 04 00 00 01 01 08"],
+  ["switches", "AA 11 00 00 0D 81 42 0A 00 00 04 09 00 1B 00 1D 01 1A 01"],
+  ["two pushes, glued", "AA 0D 00 00 04 02 8A 06 00 01 02 01 0A 03 00 AA 0F 00 00 04 02 8B 08 00 02 03 01 03 02 00 03 04"],
+  ["noise + split", "13 37 AA 0B 00 00 0C 81 02 04 00 00 01 01 08"],
+];
+---
+
+<div class="widget decoder">
+  <h4>Packet decoder · OPO (realme · OPPO · OnePlus)</h4>
+  <p class="hint">Paste bytes in hex. Frames are found the way Earshot finds them: skip to <code>AA</code>, read the LEB128 length, cut.</p>
+  <textarea spellcheck="false" rows="3">{presets[1][1]}</textarea>
+  <div class="presets">
+    {presets.map(([name, bytes]) => <button class="btn" data-bytes={bytes}>{name}</button>)}
+  </div>
+  <div class="out"></div>
+</div>
+
+<style>
+  .decoder textarea { width: 100%; font: 15px/1.5 var(--mono); padding: 12px; border-radius: 10px; border: 1.5px solid var(--text); background: var(--paper); color: var(--text); resize: vertical; }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+  .out :global(.frame) { border-top: 1.5px dashed var(--line); padding-top: 14px; margin-top: 14px; }
+  .out :global(.title) { font: 600 13px var(--mono); margin-bottom: 8px; }
+  .out :global(.cells) { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .out :global(.cell) { font: 600 14px var(--mono); width: 38px; height: 34px; display: grid; place-items: center; border-radius: 6px; border: 1.4px solid var(--text); background: color-mix(in srgb, var(--c) 26%, var(--paper)); cursor: default; }
+  .out :global(.cell.hot) { background: var(--c); color: #fff; }
+  .out :global(.rows) { display: grid; grid-template-columns: auto auto 1fr; gap: 3px 14px; font-size: 14px; }
+  .out :global(.rows > *) { padding: 2px 0; }
+  .out :global(.sw) { width: 12px; height: 12px; border-radius: 3px; background: var(--c); margin-top: 5px; }
+  .out :global(.k) { font: 600 13px var(--mono); }
+  .out :global(.v) { color: var(--muted); }
+  .out :global(.skip) { color: var(--muted); font: 13px var(--mono); }
+</style>
+
+<script>
+  type Field = { a: number; b: number; name: string; meaning: string; color: string };
+  const C = { ink: "#1b1a17", verm: "#e0462f", cobalt: "#2c4fa3", green: "#2e8b57", ochre: "#d9a441", faint: "#b4ab99" };
+  const hex2 = (n: number) => n.toString(16).toUpperCase().padStart(2, "0");
+  const hex4 = (n: number) => n.toString(16).toUpperCase().padStart(4, "0");
+
+  const COMMANDS: Record<number, string> = {
+    0x0105: "firmware?", 0x0106: "battery?", 0x0108: "touch bindings?", 0x0109: "wear status?",
+    0x010c: "noise mode / hold cycle?", 0x010d: "misc switches?", 0x010f: "EQ preset?", 0x0110: "volume enhancer?",
+    0x0205: "subscribe to pushes", 0x0400: "find (ring)", 0x0401: "set touch", 0x0403: "set misc switch",
+    0x0404: "set noise mode", 0x0406: "set EQ", 0x0407: "set enhancer", 0x041e: "set spatial type",
+    0x0204: "PUSH: something changed", 0x0504: "PUSH: EQ changed",
+  };
+  const SLOT: Record<number, string> = { 1: "left", 2: "right", 3: "case" };
+  const PLACE: Record<number, string> = { 0: "in case", 1: "out of ear", 3: "in ear" };
+  const MODE: Record<number, string> = { 1: "off", 2: "transparency", 4: "ANC mild", 8: "ANC deep", 0x10: "ANC moderate", 0x20: "ANC adaptive" };
+  const SWITCH: Record<number, string> = { 6: "game mode", 9: "vocal enhancement", 0x11: "dual device", 0x18: "hi-res (LHDC)", 0x1a: "wind reduction", 0x1b: "spatial audio", 0x1d: "dynamic bass", 0x1e: "(unknown 1E)" };
+  const EQ: Record<number, string> = { 0: "Original", 1: "Deep bass", 2: "Serenade", 3: "Clear bass" };
+  const GESTURE: Record<number, string> = { 1: "single", 2: "double", 3: "triple", 4: "hold" };
+  const ACTION: Record<number, string> = { 0: "nothing", 1: "play/pause", 4: "assistant", 5: "previous", 6: "next", 8: "noise control", 0x0b: "volume up", 0x0c: "volume down", 0x11: "game mode" };
+
+  function leb(bytes: number[], i: number): [number, number] | null {
+    let v = 0, shift = 0, n = 0;
+    for (let k = i; k < bytes.length; k++) {
+      n++;
+      v |= (bytes[k] & 0x7f) << shift;
+      if (!(bytes[k] & 0x80)) return [v, n];
+      shift += 7;
+      if (shift > 28) return null;
+    }
+    return null;
+  }
+
+  function payloadFields(cmd: number, p: number[], o: number): Field[] {
+    const f: Field[] = [];
+    const add = (a: number, b: number, name: string, meaning: string, color = C.verm) => f.push({ a: o + a, b: o + b, name, meaning, color });
+    const status = () => add(0, 1, "status", p[0] === 0 ? "00 – ok" : p[0] === 0x0e ? "0E – refused: no bud in an ear" : `${hex2(p[0])} – refused`, p[0] === 0 ? C.green : C.verm);
+    const isReply = (cmd & 0x8000) !== 0;
+    const base = cmd & 0x7fff;
+    const push = cmd === 0x0204;
+    if (push) add(0, 1, "push type", ({ 1: "battery", 2: "wear status", 3: "noise mode", 5: "game mode" } as Record<number, string>)[p[0]] ?? hex2(p[0]), C.ink);
+    if ((isReply && base === 0x0106) || (push && p[0] === 1)) {
+      if (!push) status();
+      add(1, 2, "count", `${p[1]} readings`, C.ink);
+      for (let i = 2; i + 1 < p.length; i += 2) {
+        const lvl = p[i + 1] & 0x7f, chg = p[i + 1] & 0x80;
+        const unread = p[i] === 3 && lvl === 0 && !chg;
+        add(i, i + 2, SLOT[p[i]] ?? `slot ${p[i]}`, unread ? "0 → can't read (skipped)" : `${lvl} %${chg ? ", charging" : ""}`, unread ? C.faint : C.cobalt);
+      }
+    } else if ((isReply && base === 0x0109) || (push && p[0] === 2)) {
+      if (!push) status();
+      add(1, 2, "count", `${p[1]} entries`, C.ink);
+      for (let i = 2; i + 1 < p.length; i += 2) add(i, i + 2, SLOT[p[i]] ?? `side ${p[i]}`, PLACE[p[i + 1]] ?? hex2(p[i + 1]), C.cobalt);
+    } else if ((isReply && base === 0x010c) || (push && p[0] === 3) || base === 0x0404 && !isReply) {
+      const off = isReply || push ? 1 : 0;
+      if (isReply) status();
+      add(off, off + 1, "type", p[off] === 1 ? "current mode" : "hold-cycle mask", C.ink);
+      add(off + 1, off + 2, "fixed", "01", C.faint);
+      const v = p[off + 2];
+      const meaning = p[off] === 2 ? Object.entries({ 1: "off", 2: "transparency", 8: "ANC" }).filter(([b]) => v & +b).map(([, n]) => n).join(" + ") : MODE[v] ?? hex2(v);
+      add(off + 2, off + 3, "value", meaning, C.verm);
+    } else if (isReply && base === 0x010d) {
+      status();
+      add(1, 2, "count", `${p[1]} switches`, C.ink);
+      for (let i = 2; i + 1 < p.length; i += 2) add(i, i + 2, SWITCH[p[i]] ?? `switch ${hex2(p[i])}`, p[i + 1] ? "on" : "off", p[i + 1] ? C.verm : C.cobalt);
+    } else if (isReply && base === 0x0108) {
+      status();
+      add(1, 2, "count", `${p[1]} bindings`, C.ink);
+      for (let i = 2; i + 3 < p.length; i += 4) add(i, i + 4, `${SLOT[p[i]]} ${GESTURE[p[i + 2]] ?? "gesture " + hex2(p[i + 2])}`, ACTION[p[i + 3]] ?? hex2(p[i + 3]), C.cobalt);
+    } else if (isReply && base === 0x0105) {
+      status();
+      add(1, 2, "count", `${p[1]} fields`, C.ink);
+      add(2, p.length, "ASCII", String.fromCharCode(...p.slice(2)), C.ochre);
+    } else if ((isReply && base === 0x010f) || cmd === 0x0504) {
+      add(0, 1, "status", "00", C.green);
+      add(1, 2, "EQ", EQ[p[1]] ?? hex2(p[1]), C.verm);
+    } else if (isReply && base === 0x0110) {
+      status();
+      add(1, 2, "enhancer", p[1] ? "on" : "off", C.verm);
+    } else if (isReply) {
+      status();
+    } else if (base === 0x0403) {
+      add(0, 1, "switch", SWITCH[p[0]] ?? hex2(p[0]), C.ink);
+      add(1, 2, "value", p[1] ? "on" : "off", C.verm);
+    } else if (base === 0x0401) {
+      add(0, 1, "count", "1", C.ink);
+      add(1, 2, "side", SLOT[p[1]] ?? hex2(p[1]), C.cobalt);
+      add(2, 4, "gesture", GESTURE[p[3]] ?? hex2(p[3]), C.ochre);
+      add(4, 5, "action", ACTION[p[4]] ?? hex2(p[4]), C.verm);
+    } else if (base === 0x0406) {
+      add(0, 1, "EQ", EQ[p[0]] ?? hex2(p[0]), C.verm);
+    } else if (base === 0x0205) {
+      add(0, p.length, "subscriptions", "battery, wear, noise mode, game mode…", C.ink);
+    } else if (p.length) {
+      add(0, p.length, "payload", "", C.ochre);
+    }
+    return f;
+  }
+
+  function decode(bytes: number[]) {
+    const out: { skipped?: number[]; frame?: number[]; fields?: Field[]; title?: string }[] = [];
+    let i = 0;
+    while (i < bytes.length) {
+      if (bytes[i] !== 0xaa) {
+        const next = bytes.indexOf(0xaa, i);
+        const end = next < 0 ? bytes.length : next;
+        out.push({ skipped: bytes.slice(i, end) });
+        i = end;
+        continue;
+      }
+      const l = leb(bytes, i + 1);
+      if (!l || i + 1 + l[1] + l[0] > bytes.length || l[0] < 7) {
+        out.push({ skipped: bytes.slice(i), title: "incomplete frame – a decoder would wait for more bytes" });
+        break;
+      }
+      const [len, ls] = l;
+      const frame = bytes.slice(i, i + 1 + ls + len);
+      const s = 1 + ls;
+      const cmd = frame[s + 2] | (frame[s + 3] << 8);
+      const name = COMMANDS[cmd & 0x7fff] ?? "unknown";
+      const reply = (cmd & 0x8000) !== 0;
+      const fields: Field[] = [
+        { a: 0, b: 1, name: "preamble", meaning: "AA – start of frame", color: C.ink },
+        { a: 1, b: s, name: "length", meaning: `${len} bytes follow (LEB128)`, color: C.verm },
+        { a: s, b: s + 2, name: "reserved", meaning: "00 00", color: C.faint },
+        { a: s + 2, b: s + 4, name: "command", meaning: `0x${hex4(cmd)} – ${reply ? "reply to " : ""}${name}`, color: C.cobalt },
+        { a: s + 4, b: s + 5, name: "seq", meaning: `${frame[s + 4]}`, color: C.green },
+        { a: s + 5, b: s + 7, name: "payload length", meaning: `${frame[s + 5] | (frame[s + 6] << 8)}`, color: C.ochre },
+        ...payloadFields(cmd, frame.slice(s + 7), s + 7),
+      ];
+      out.push({ frame, fields, title: `${reply ? "←" : cmd === 0x0204 || cmd === 0x0504 ? "⇠" : "→"} 0x${hex4(cmd)} ${reply ? "reply: " : ""}${name}` });
+      i += frame.length;
+    }
+    return out;
+  }
+
+  for (const w of document.querySelectorAll<HTMLElement>(".decoder")) {
+    const ta = w.querySelector("textarea")!;
+    const out = w.querySelector(".out") as HTMLElement;
+    const render = () => {
+      const bytes = (ta.value.match(/[0-9a-fA-F]{2}/g) ?? []).map((h) => parseInt(h, 16));
+      out.innerHTML = "";
+      for (const item of decode(bytes)) {
+        const div = document.createElement("div");
+        div.className = "frame";
+        if (item.skipped) {
+          div.innerHTML = `<div class="skip">${item.title ?? "not part of a frame – dropped"}: ${item.skipped.map(hex2).join(" ")}</div>`;
+          out.appendChild(div);
+          continue;
+        }
+        const colorAt = (k: number) => [...item.fields!].reverse().find((f) => k >= f.a && k < f.b);
+        const cells = item.frame!.map((b, k) => `<span class="cell" data-k="${k}" style="--c:${colorAt(k)?.color ?? C.faint}">${hex2(b)}</span>`).join("");
+        const rows = item.fields!.map((f, n) => `<span class="sw" style="--c:${f.color}" data-f="${n}"></span><span class="k">${f.name}</span><span class="v">${f.meaning}</span>`).join("");
+        div.innerHTML = `<div class="title">${item.title}</div><div class="cells">${cells}</div><div class="rows">${rows}</div>`;
+        div.addEventListener("mouseover", (e) => {
+          const k = Number((e.target as HTMLElement).dataset.k);
+          if (Number.isNaN(k)) return;
+          const f = colorAt(k);
+          div.querySelectorAll<HTMLElement>(".cell").forEach((c) => c.classList.toggle("hot", !!f && +c.dataset.k! >= f.a && +c.dataset.k! < f.b));
+        });
+        out.appendChild(div);
+      }
+    };
+    ta.addEventListener("input", render);
+    w.querySelectorAll<HTMLButtonElement>("[data-bytes]").forEach((b) => b.addEventListener("click", () => { ta.value = b.dataset.bytes!; render(); }));
+    render();
+  }
+</script>

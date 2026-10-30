@@ -1,0 +1,100 @@
+---
+// Chapter 01's hands-on model: drag to turn it, slide to pull it apart.
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<div class="widget viewer" data-base={base}>
+  <h4>Pull it apart yourself · drag to turn</h4>
+  <canvas></canvas>
+  <label class="mono">assembled <input type="range" min="0" max="100" value="0" /> exploded</label>
+  <p class="name mono">hover a part</p>
+</div>
+
+<style>
+  .viewer canvas { width: 100%; aspect-ratio: 16 / 9; display: block; cursor: grab; touch-action: pan-y; }
+  .viewer label { display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .viewer input { flex: 1; accent-color: var(--verm); }
+  .name { font-size: 13px; color: var(--verm); min-height: 1.4em; margin: 6px 0 0; }
+</style>
+
+<script>
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+  for (const w of document.querySelectorAll<HTMLElement>(".viewer")) {
+    const canvas = w.querySelector("canvas")!;
+    const slider = w.querySelector("input")!;
+    const label = w.querySelector(".name")!;
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(28, 16 / 9, 0.1, 200);
+    scene.add(new THREE.HemisphereLight(0xfff7e8, 0x8a8170, 1.7));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    sun.position.set(4, 8, 6);
+    scene.add(sun);
+    const grad = new THREE.DataTexture(new Uint8Array([90, 170, 255]), 3, 1, THREE.RedFormat);
+    grad.needsUpdate = true;
+    const group = new THREE.Group();
+    scene.add(group);
+    const parts: { node: THREE.Object3D; home: THREE.Vector3; off: THREE.Vector3 }[] = [];
+    const meshes: THREE.Mesh[] = [];
+    let box = new THREE.Box3();
+    const base = w.dataset.base;
+
+    Promise.all([new GLTFLoader().loadAsync(`${base}/models/bud.glb`), fetch(`${base}/models/explode.json`).then((r) => r.json())]).then(
+      ([g, offsets]: [any, Record<string, number[]>]) => {
+        g.scene.traverse((o: THREE.Object3D) => {
+          const m = o as THREE.Mesh;
+          if (!m.isMesh) return;
+          m.material = new THREE.MeshToonMaterial({ color: (m.material as THREE.MeshStandardMaterial).color, gradientMap: grad });
+          m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 38), new THREE.LineBasicMaterial({ color: 0x1b1a17 })));
+          meshes.push(m);
+        });
+        for (const [name, off] of Object.entries(offsets)) {
+          const node = g.scene.getObjectByName(name.replace(/\s/g, "_"));
+          if (node) parts.push({ node, home: node.position.clone(), off: new THREE.Vector3(...off) });
+        }
+        parts.forEach((p) => p.node.position.add(p.off));
+        box = new THREE.Box3().setFromObject(g.scene);
+        parts.forEach((p) => p.node.position.copy(p.home));
+        group.add(g.scene);
+        draw();
+      },
+    );
+
+    let yaw = 0, pitch = 0, dragging = false, lx = 0, ly = 0;
+    canvas.addEventListener("pointerdown", (e) => { dragging = true; lx = e.clientX; ly = e.clientY; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener("pointerup", () => (dragging = false));
+    const ray = new THREE.Raycaster();
+    canvas.addEventListener("pointermove", (e) => {
+      if (dragging) {
+        yaw += (e.clientX - lx) * 0.01;
+        pitch = Math.max(-0.8, Math.min(0.8, pitch + (e.clientY - ly) * 0.01));
+        lx = e.clientX;
+        ly = e.clientY;
+        draw();
+        return;
+      }
+      const r = canvas.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+      const hit = ray.intersectObjects(meshes, false)[0];
+      label.textContent = hit ? hit.object.name.replace(/_/g, " ") : "hover a part";
+    });
+    slider.addEventListener("input", draw);
+
+    function draw() {
+      const k = +slider.value / 100;
+      parts.forEach((p) => p.node.position.copy(p.home).addScaledVector(p.off, k));
+      group.rotation.set(pitch, yaw, 0);
+      const { width } = canvas.getBoundingClientRect();
+      renderer.setSize(width, width * 9 / 16, false);
+      const c = box.getCenter(new THREE.Vector3());
+      const d = box.getSize(new THREE.Vector3()).length() * 1.35;
+      camera.position.copy(c).add(new THREE.Vector3(0.3, 0.32, 1).normalize().multiplyScalar(d));
+      camera.lookAt(c);
+      renderer.render(scene, camera);
+    }
+    new ResizeObserver(draw).observe(canvas);
+  }
+</script>
