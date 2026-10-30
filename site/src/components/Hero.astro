@@ -1,105 +1,86 @@
 ---
 // The cover: a poster on night paper. The earbud is drawn out of the bytes it actually sent,
 // in a dot-matrix that keeps rewriting itself; a scan line sweeps it like a reader.
+// Two thin pointers name what you're looking at, the way a technical poster would.
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 
 <section class="hero" data-base={base}>
   <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
 
-  <p class="meta a mono">REF // RFCOMM CH 15 → NOW<br /><span>#</span> the buds remember what the mac forgot</p>
-  <p class="meta b mono">FIG. 00 — SPECIMEN<br />TWS EARBUD · DRAWN IN ITS OWN BYTES</p>
-  <p class="meta c mono"><span>[ ]</span> a hidden serial port<br /><span>[ ]</span> nine bytes to ask<br /><span>[x]</span> left 10 %</p>
+  <p class="ref mono">REF // RFCOMM CH 15 → NOW</p>
 
   <div class="art">
     <canvas aria-label="An earbud drawn out of hex bytes"></canvas>
-    <span class="glyphs g1 mono" aria-hidden="true">+ + = × AA 07 → ÷ + ×</span>
-    <span class="glyphs g2 mono" aria-hidden="true">← 81 00 06 = + 0A ×</span>
+    <svg class="pointers" aria-hidden="true"></svg>
+    <p class="tag t1 mono" data-at="0.42,0.3">THIS IS AN EARBUD</p>
+    <p class="tag t2 mono" data-at="0.62,0.84">THIS IS WHAT IT SAYS<span>AA 0D 00 00 06 81 00 06 …</span></p>
   </div>
 
   <h1 class="word pixel" aria-label="Channel Fifteen">CHANNEL<span>FIFTEEN</span></h1>
 
-  <div class="block">
-    <p class="lede">
-      How a Mac learned to talk to a pair of earbuds — told as a story, explained from first principles:
-      sound, electrons, radio, Bluetooth, bytes, protocols, Swift and shipping.
-    </p>
-    <table class="tb mono">
-      <tr><th>SUBJECT</th><td>realme Buds Air 7</td><th>DOOR</th><td>RFCOMM 15</td></tr>
-      <tr><th>CHAPTERS</th><td>13</td><th>PLATES</th><td>43</td></tr>
-      <tr><th>MODEL</th><td>Blender, 21 parts</td><th>BRANDS</th><td>7</td></tr>
-    </table>
-    <div class="cta">
-      <a class="go" href="#story">Begin the story ↓</a>
-      <a class="go ghost" href={`${base}/chapters/00-prologue/`}>Read the prologue</a>
-    </div>
+  <div class="foot">
+    <p class="lede">How a Mac learned to talk to a pair of earbuds — from electrons to a menu-bar app.</p>
+    <a class="go" href="#story">Begin the story ↓</a>
   </div>
 
-  <div class="scan mono"><i></i>SCAN COMPLETE · 00:00:07</div>
   <div class="ticker mono" aria-hidden="true"><span>AA 07 00 00 06 01 00 00 00 → AA 0D 00 00 06 81 00 06 00 00 02 01 0A 03 00 ← AA 07 00 00 09 01 02 00 00 → AA 0B 00 00 0C 81 03 04 00 00 01 01 08 ← </span><span>AA 07 00 00 06 01 00 00 00 → AA 0D 00 00 06 81 00 06 00 00 02 01 0A 03 00 ← AA 07 00 00 09 01 02 00 00 → AA 0B 00 00 0C 81 03 04 00 00 01 01 08 ← </span></div>
 </section>
 
 <style>
   .hero {
     --fg: var(--bone); position: relative; background: var(--night); color: var(--fg); overflow: hidden;
-    height: calc(100svh - 58px); min-height: 620px; display: grid; padding: 54px 24px 70px; gap: 18px 28px;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) auto; grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: "a art word" "c art word" "block block word";
+    height: calc(100svh - 58px); min-height: 600px; display: grid; padding: 48px 28px 64px; gap: 0 32px;
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "ref word" "art word" "foot word";
   }
-  .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.09;
+  .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.08;
     background: radial-gradient(circle, var(--fg) 1px, transparent 1.3px) 0 0 / 8px 8px; }
-  .crop { position: absolute; width: 18px; height: 18px; border: 0 solid var(--fg); opacity: 0.7; }
+  .crop { position: absolute; width: 18px; height: 18px; border: 0 solid var(--fg); opacity: 0.6; }
   .tl { top: 14px; left: 14px; border-width: 1.5px 0 0 1.5px; } .tr { top: 14px; right: 14px; border-width: 1.5px 1.5px 0 0; }
-  .bl { bottom: 14px; left: 14px; border-width: 0 0 1.5px 1.5px; } .br { bottom: 14px; right: 14px; border-width: 0 1.5px 1.5px 0; }
-  .meta { position: relative; margin: 0; font-size: 11px; line-height: 1.6; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.9; }
-  .meta span { color: var(--magenta); }
-  .a { grid-area: a; } .c { grid-area: c; align-self: center; text-transform: none; letter-spacing: 0.04em; font-size: 13px; }
-  .c span { color: var(--phosphor); }
-  .b { position: absolute; top: 54px; right: calc(24px + 2 * min(8.5vw, calc((100svh - 190px) / 7.4)) + 30px); text-align: right; }
-  .art { grid-area: art; position: relative; min-height: 0; margin-top: 44px; }
-  .art canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .glyphs { position: absolute; color: var(--phosphor); font-size: 13px; letter-spacing: 0.2em; white-space: nowrap; }
-  .g1 { left: 2%; top: 22%; } .g2 { right: 4%; bottom: 18%; color: var(--magenta); }
+  .bl { bottom: 42px; left: 14px; border-width: 0 0 1.5px 1.5px; } .br { bottom: 42px; right: 14px; border-width: 0 1.5px 1.5px 0; }
+  .ref { grid-area: ref; margin: 0; font-size: 11px; letter-spacing: 0.16em; opacity: 0.75; }
+  .art { grid-area: art; position: relative; min-height: 0; }
+  .art canvas, .pointers { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pointers { overflow: visible; pointer-events: none; }
+  .tag { position: absolute; margin: 0; font-size: 11px; letter-spacing: 0.16em; white-space: nowrap; }
+  .tag span { display: block; margin-top: 6px; color: var(--phosphor); letter-spacing: 0.08em; }
+  .t1 { left: 0; top: 14%; }
+  .t2 { right: 0; bottom: 8%; text-align: right; }
   .word {
-    grid-area: word; margin: 0; writing-mode: vertical-rl; transform: rotate(180deg); justify-self: end;
-    font-size: min(8.5vw, calc((100svh - 190px) / 7.4)); line-height: 0.9; letter-spacing: -0.02em; color: var(--fg); white-space: nowrap; align-self: center;
+    grid-area: word; margin: 0; writing-mode: vertical-rl; transform: rotate(180deg); justify-self: end; align-self: center;
+    font-size: min(8.5vw, calc((100svh - 190px) / 7.4)); line-height: 0.9; letter-spacing: -0.02em; white-space: nowrap;
   }
-  .word span { display: block; color: var(--magenta); }
-  .block { grid-area: block; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: end; position: relative; }
-  .lede { margin: 0; font-size: clamp(17px, 1.8vw, 21px); line-height: 1.5; max-width: 560px; }
-  .tb { border-collapse: collapse; font-size: 11px; width: 100%; border: 1.5px solid var(--fg); }
-  .tb th, .tb td { border: 1px solid color-mix(in srgb, var(--fg) 55%, transparent); padding: 5px 8px; text-align: left; }
-  .tb th { font-weight: 500; opacity: 0.7; letter-spacing: 0.1em; width: 1%; white-space: nowrap; }
-  .tb td { color: var(--phosphor); }
-  .cta { grid-column: 1 / -1; display: flex; gap: 12px; flex-wrap: wrap; }
-  .go { font: 600 13px var(--mono); text-decoration: none; padding: 11px 16px; background: var(--magenta); color: var(--night); border: 1.5px solid var(--magenta); box-shadow: 5px 5px 0 var(--phosphor); }
+  .word span { display: block; color: var(--signal); }
+  .foot { grid-area: foot; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .lede { margin: 0; max-width: 30ch; font: 400 clamp(20px, 2.1vw, 28px)/1.3 var(--sans); }
+  .go { font: 600 13px var(--mono); text-decoration: none; padding: 12px 18px; background: var(--signal); color: var(--night); border: 1.5px solid var(--signal); box-shadow: 5px 5px 0 var(--phosphor); white-space: nowrap; }
   .go:hover { color: var(--night); transform: translate(-1px, -1px); }
-  .go.ghost { background: transparent; color: var(--fg); border-color: var(--fg); box-shadow: none; }
-  .go.ghost:hover { color: var(--magenta); border-color: var(--magenta); }
-  .scan { position: absolute; left: 24px; bottom: 40px; font-size: 10px; letter-spacing: 0.2em; display: flex; gap: 10px; align-items: center; opacity: 0.8; }
-  .scan i { width: 90px; height: 14px; background: repeating-linear-gradient(90deg, var(--fg) 0 2px, transparent 2px 4px, var(--fg) 4px 5px, transparent 5px 8px, var(--fg) 8px 11px, transparent 11px 13px); }
   .ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; display: flex; overflow: hidden; border-top: 1.5px solid var(--fg); background: var(--phosphor); color: var(--night); font-size: 12px; font-weight: 600; line-height: 28px; white-space: nowrap; }
-  .ticker span { padding-right: 0; animation: tick 40s linear infinite; }
+  .ticker span { animation: tick 40s linear infinite; }
   @keyframes tick { to { transform: translateX(-100%); } }
   @media (max-width: 900px) {
-    .hero { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto auto; grid-template-areas: "word" "a" "art" "block"; padding: 40px 16px 90px; }
-    .hero { height: auto; min-height: 0; }
-    .word { writing-mode: horizontal-tb; transform: none; justify-self: start; align-self: start; font-size: clamp(44px, 14vw, 96px); line-height: 0.9; white-space: normal; }
-    .b, .c, .g2 { display: none; }
-    .art { min-height: 0; margin-top: 0; aspect-ratio: 1 / 1; }
-    .block { grid-template-columns: 1fr; gap: 16px; }
-    .scan { bottom: 38px; left: 16px; }
+    .hero { height: auto; min-height: 0; grid-template-columns: minmax(0, 1fr); grid-template-areas: "word" "ref" "art" "foot"; padding: 36px 16px 84px; gap: 14px; }
+    .word { writing-mode: horizontal-tb; transform: none; justify-self: start; font-size: clamp(44px, 14vw, 96px); white-space: normal; }
+    .art { aspect-ratio: 1 / 1.34; }
+    .tag { font-size: 9.5px; }
+    .t1 { top: 0; }
+    .t2 { bottom: 0; }
+    .bl, .br { bottom: 40px; }
   }
   @media (prefers-reduced-motion: reduce) { .ticker span { animation: none; } }
 </style>
 
 <script>
   const hero = document.querySelector<HTMLElement>(".hero")!;
+  const art = hero.querySelector<HTMLElement>(".art")!;
   const canvas = hero.querySelector("canvas")!;
+  const svg = hero.querySelector<SVGSVGElement>(".pointers")!;
+  const tags = [...hero.querySelectorAll<HTMLElement>(".tag")];
   const ctx = canvas.getContext("2d")!;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const BYTES = "AA 07 00 00 06 01 00 00 00 AA 0D 00 00 06 81 00 06 00 00 02 01 0A 03 00 AA 0B 00 00 0C 81 03 04 00 00 01 01 08".split(" ");
-  const MAGENTA = "#ff3d8b", PHOSPHOR = "#4be08a", BONE = "#efe8d8";
+  const SIGNAL = "#ff5a36", PHOSPHOR = "#4be08a", BONE = "#efe8d8";
 
   type Cell = { x: number; y: number; lum: number; edge: boolean; byte: string; shift: number };
   let cells: Cell[] = [];
@@ -114,8 +95,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     canvas.height = r.height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // Fit the bud inside the box, then cut it into cells of a size that reads as type.
-    const fitH = Math.min(r.height, (r.width * img.height) / img.width) * 0.94;
-    cs = Math.max(7, Math.round(fitH / 62));
+    const fitH = Math.min(r.height, (r.width * img.height) / img.width) * 0.92;
+    cs = Math.max(6, Math.round(fitH / 60));
     rows = Math.floor(fitH / cs);
     cols = Math.floor((rows * img.width) / img.height);
     ox = (r.width - cols * cs) / 2;
@@ -138,8 +119,36 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       }
     }
     // A few rows slip sideways, like a misregistered print.
-    const slips = new Set(Array.from({ length: 5 }, () => Math.floor(Math.random() * rows)));
+    const slips = new Set(Array.from({ length: 4 }, () => Math.floor(Math.random() * rows)));
     for (const c of cells) if (slips.has(c.y)) c.shift = (c.y % 2 ? 1 : -1) * cs * 1.5;
+    point();
+  }
+
+  // Each pointer runs from its label to the nearest drawn cell to its target (fractions of the bud).
+  function point() {
+    const box = art.getBoundingClientRect();
+    svg.innerHTML = "";
+    for (const tag of tags) {
+      const [fx, fy] = (tag.dataset.at ?? "0.5,0.5").split(",").map(Number);
+      const tx = fx * cols, ty = fy * rows;
+      let best = cells[0], bd = Infinity;
+      for (const c of cells) {
+        const dd = (c.x - tx) ** 2 + (c.y - ty) ** 2;
+        if (dd < bd) (bd = dd), (best = c);
+      }
+      if (!best) continue;
+      const ax = ox + best.x * cs + cs / 2, ay = oy + best.y * cs + cs / 2;
+      const r = tag.getBoundingClientRect();
+      const left = r.left - box.left, top = r.top - box.top;
+      const fromRight = left + r.width / 2 < ax;
+      const lx = fromRight ? left + r.width + 10 : left - 10;
+      const ly = top + 6;
+      svg.insertAdjacentHTML(
+        "beforeend",
+        `<line x1="${lx}" y1="${ly}" x2="${ax}" y2="${ay}" stroke="${BONE}" stroke-width="1" />` +
+          `<circle cx="${ax}" cy="${ay}" r="3.5" fill="${PHOSPHOR}" />`,
+      );
+    }
   }
 
   let mx = -1e4, my = -1e4;
@@ -169,13 +178,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         ctx.fillStyle = BONE;
         ctx.fillRect(px + 1, py + 1, cs - 2, cs - 2);
       } else if (c.lum < 0.42) {
-        ctx.fillStyle = MAGENTA;
+        ctx.fillStyle = SIGNAL;
         ctx.fillRect(px + 0.5, py + 0.5, cs - 1, cs - 1);
       } else if (c.lum < 0.62) {
-        ctx.fillStyle = MAGENTA;
+        ctx.fillStyle = SIGNAL;
         ctx.fillText(c.byte, px + cs / 2, py + cs / 2);
       } else {
-        ctx.fillStyle = MAGENTA;
+        ctx.fillStyle = SIGNAL;
         const s = cs * 0.34;
         ctx.fillRect(px + (cs - s) / 2, py + (cs - s) / 2, s, s);
       }

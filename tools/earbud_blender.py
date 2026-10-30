@@ -29,6 +29,7 @@ PALETTE = {
     "ink": "#1B1A17",
     "vermilion": "#E0462F",
     "cobalt": "#2C4FA3",
+    "navy": "#1B2F63",
     "green": "#2E8B57",
     "ochre": "#D9A441",
     "steel": "#A9ADB0",
@@ -320,11 +321,11 @@ for side in DOCKS:
         hi = Vector([max(p[i] for p in pts) for i in range(3)])
         mid, size = (lo + hi) / 2, hi - lo
         if kind == "head":
-            c = add("sphere", case_body, "cutter", "ink", mid, scale=(size.x / 2 + 0.07, size.y / 2 + 0.07, size.z / 2 + 0.07))
+            c = add("sphere", case_body, "cutter", "navy", mid, scale=(size.x / 2 + 0.035, size.y / 2 + 0.035, size.z / 2 + 0.035))
         else:
             top = SPLIT + 0.6
-            c = add("cyl", case_body, "cutter", "ink", (mid.x, mid.y, (lo.z - 0.06 + top) / 2),
-                    scale=(size.x / 2 + 0.08, size.y / 2 + 0.08, (top - lo.z + 0.06) / 2), radius=1, depth=2)
+            c = add("cyl", case_body, "cutter", "navy", (mid.x, mid.y, (lo.z - 0.06 + top) / 2),
+                    scale=(size.x / 2 + 0.05, size.y / 2 + 0.05, (top - lo.z + 0.06) / 2), radius=1, depth=2)
         cutters.append(c)
 for c in cutters:
     mod = body.modifiers.new("well", "BOOLEAN")
@@ -356,6 +357,9 @@ for gi, ch in enumerate("15"):
                 x = (gi * 6 + c - 5) * px
                 y = (3 - r) * px
                 add("cube", case_lid, "Lid pixel", "vermilion", (x, y, top + 0.005), scale=(px * 0.46, px * 0.46, 0.02))
+# Inside the lid, a recessed panel and the magnet that holds it shut; seen only while it's open.
+rounded_box("Lid liner", (0, -0.1, SPLIT + 0.005), (4.7, 2.7, 0.03), 0.4, "shell_dark", case_lid)
+rounded_box("Lid magnet", (0, -1.45, SPLIT + 0.02), (0.6, 0.18, 0.04), 0.03, "steel", case_lid)
 # The lid turns about the hinge: its pixels and shell share one origin there.
 lid_parts = list(case_lid.objects)
 pivot = bpy.data.objects.new("Lid hinge", None)

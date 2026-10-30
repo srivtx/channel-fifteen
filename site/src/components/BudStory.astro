@@ -9,13 +9,13 @@ const steps = [
     kicker: "the problem",
     title: "A pair of earbuds that wouldn't talk to a Mac",
     text: "On a phone, realme Link shows each bud's battery and changes noise cancelling, EQ, spatial audio and taps. On a Mac: nothing. The buds play music, and every setting is invisible. This is the story of fixing that, from the electrons up.",
-    ink: ["#121110", "#efe8d8", "#ff3d8b"],
+    ink: ["#121110", "#efe8d8", "#ff5a36"],
   },
   {
     kicker: "anatomy",
     title: "It's a computer that fits in your ear",
     text: "Pull one apart along its axis and you find a speaker, three microphones, sensors, a battery, a radio and a processor with memory. Every setting Earshot changes ends up somewhere in here.",
-    ink: ["#e8c3ba", "#1b1a17", "#2c4fa3"],
+    ink: ["#d9ddc9", "#1b1a17", "#2c4fa3"],
   },
   {
     kicker: "sound",
@@ -56,13 +56,13 @@ const steps = [
     kicker: "the case",
     title: "Back in the case, the buds keep talking",
     text: "The case is a computer too: its own cell, a charger, and a Hall sensor that notices the lid. Each bud drops onto two pogo pins in its well; the case tells them its level, and the buds tell Earshot.",
-    ink: ["#ff3d8b", "#1b1a17", "#2c4fa3"],
+    ink: ["#cddbd3", "#1b1a17", "#e0462f"],
   },
   {
     kicker: "read on",
     title: "Lid shut. Thirteen chapters, forty-three plates.",
     text: "Sound to bits, radio, the Bluetooth stack, macOS, the method, the protocols byte by byte, integrity, seven brands, the app and shipping. Start anywhere.",
-    ink: ["#efe8d8", "#1b1a17", "#e0462f"],
+    ink: ["#121110", "#efe8d8", "#4be08a"],
   },
 ];
 ---
@@ -98,7 +98,7 @@ const steps = [
 
 <style>
   .story {
-    --bg: #121110; --fg: #efe8d8; --accent: #ff3d8b;
+    --bg: #121110; --fg: #efe8d8; --accent: #ff5a36;
     position: relative; background: var(--bg); color: var(--fg); transition: background-color 0.6s, color 0.6s;
     display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 32px; padding: 0 max(16px, calc((100vw - 1280px) / 2));
   }
@@ -117,8 +117,8 @@ const steps = [
   .step .kicker { color: var(--fg); opacity: 0.75; margin: 16px 0 0; }
   .step h2 { font: 400 clamp(26px, 3.2vw, 38px)/1.12 var(--pixel); margin: 0.3em 0 0.5em; }
   .txt { font-size: 17px; line-height: 1.6; margin: 0; opacity: 0.92; }
-  .go { align-self: flex-start; margin-top: 22px; text-decoration: none; background: var(--accent); color: var(--bone); border: 1.5px solid var(--fg); box-shadow: 5px 5px 0 var(--fg); padding: 11px 16px; border-radius: 0; font-size: 13px; }
-  .go:hover { color: var(--bone); border-color: var(--fg); transform: translate(-1px, -1px); }
+  .go { align-self: flex-start; margin-top: 22px; text-decoration: none; background: var(--accent); color: var(--bg); border: 1.5px solid var(--fg); box-shadow: 5px 5px 0 var(--fg); padding: 11px 16px; border-radius: 0; font-size: 13px; }
+  .go:hover { color: var(--bg); border-color: var(--fg); transform: translate(-1px, -1px); }
   .leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
   .labels { position: absolute; inset: 0; pointer-events: none; }
   .labels :global(div) {
@@ -130,7 +130,7 @@ const steps = [
   .hex { position: absolute; left: 0; right: 0; top: 14%; display: grid; gap: 10px; opacity: 0; transition: opacity 0.5s; pointer-events: none; font-size: 13px; font-weight: 600; overflow: hidden; }
   .hex.on { opacity: 1; }
   .hex span { white-space: nowrap; color: var(--phosphor); animation: flow 7s linear infinite; }
-  .hex span.back { color: var(--magenta); animation-direction: reverse; }
+  .hex span.back { color: var(--signal); animation-direction: reverse; }
   @keyframes flow { from { transform: translateX(-35%); } to { transform: translateX(55%); } }
   @media (max-width: 860px) {
     .story { grid-template-columns: minmax(0, 1fr); gap: 0; }
@@ -224,6 +224,7 @@ const steps = [
       }
       parts.forEach((p) => p.node.position.copy(p.home).add(p.offset));
       explodedBox.setFromObject(gltf.scene);
+      budBox.getSize(budSize).setScalar(Math.max(budSize.x, budSize.y, budSize.z));
       parts.forEach((p) => p.node.position.copy(p.home));
       // The second bud gets its own materials so the first one's highlighting doesn't leak into it.
       const twin = gltf.scene.clone(true);
@@ -365,10 +366,11 @@ const steps = [
   setStep(0);
 
   const startR = new THREE.Vector3(0, 0, 0);
-  const startL = new THREE.Vector3(-9, 3, 1);
+  const startL = new THREE.Vector3(-8, 7, 2);
   const startQ = new THREE.Quaternion();
   const above = new THREE.Vector3();
-  const lift = new THREE.Vector3(0, 3.4, 0);
+  // Hover point: high over the well and a little toward the viewer, clear of the open lid.
+  const lift = new THREE.Vector3(0, 4.6, 0.6);
   const up = new THREE.Vector3(0, 1, 0);
   const sway = new THREE.Quaternion();
   const target = new THREE.Vector3(), target2 = new THREE.Vector3();
@@ -377,17 +379,23 @@ const steps = [
   const view = new THREE.Vector3();
   const clock = new THREE.Clock();
 
-  // Carries a bud from where it floats to its well: up over the well first, then straight down onto the pins.
-  function dock(obj: THREE.Object3D, from: THREE.Vector3, to: { p: THREE.Vector3; q: THREE.Quaternion }, d: number) {
+  // Carries a bud to its well in two moves: glide to a hover point high above it, turning
+  // stem-down on the way (hover 0→1), then drop straight down onto the pins (drop 0→1).
+  function dock(obj: THREE.Object3D, from: THREE.Vector3, to: { p: THREE.Vector3; q: THREE.Quaternion }, hover: number, drop: number) {
     above.copy(to.p).add(lift);
-    if (d < 0.65) {
-      const k = ss(0, 0.65, d);
-      obj.position.lerpVectors(from, above, k);
-      obj.quaternion.slerpQuaternions(startQ, to.q, k);
+    if (drop <= 0) {
+      obj.position.lerpVectors(from, above, hover);
+      obj.quaternion.slerpQuaternions(startQ, to.q, hover);
     } else {
-      obj.position.lerpVectors(above, to.p, ss(0.65, 1, d));
+      obj.position.lerpVectors(above, to.p, drop);
       obj.quaternion.copy(to.q);
     }
+  }
+  // A cube around a bud wherever it is, so the camera keeps flying buds in frame.
+  const budSize = new THREE.Vector3();
+  const flying = new THREE.Box3();
+  function around(obj: THREE.Object3D) {
+    return flying.setFromCenterAndSize(obj.position, budSize);
   }
 
   function frame() {
@@ -400,9 +408,11 @@ const steps = [
 
     // Phases, all read straight off the scroll position.
     const explode = ss(0.45, 1.2, p) * (1 - ss(5.45, 6.1, p));
-    const caseIn = caseReady ? ss(6.45, 7.0, p) : 0;
-    const dR = caseReady ? ss(6.75, 7.4, p) : 0;
-    const dL = caseReady ? ss(6.9, 7.55, p) : 0;
+    const caseIn = caseReady ? ss(6.4, 6.95, p) : 0;
+    const hoverR = caseReady ? ss(6.45, 7.0, p) : 0;
+    const hoverL = caseReady ? ss(6.55, 7.1, p) : 0;
+    const dropR = caseReady ? ss(7.05, 7.4, p) : 0;
+    const dropL = caseReady ? ss(7.15, 7.5, p) : 0;
     const shut = caseReady ? ss(7.6, 8.1, p) : 0;
 
     parts.forEach((pt) => pt.node.position.copy(pt.home).addScaledVector(pt.offset, explode));
@@ -410,10 +420,10 @@ const steps = [
     // While floating, the bud turns slowly (faster on the door step, while it talks).
     const spin = reduced ? 0 : (Math.sin(t * 0.35) * 0.4 + (steps[i].hex ? t * 0.5 : 0)) * (1 - explode);
     startQ.setFromAxisAngle(up, spin);
-    if (dR > 0) dock(budR, startR, dockR, dR);
+    if (hoverR > 0) dock(budR, startR, dockR, hoverR, dropR);
     else budR.position.copy(startR), budR.quaternion.copy(startQ);
-    budL.visible = dL > 0.001;
-    if (budL.visible) dock(budL, startL, dockL, dL);
+    budL.visible = hoverL > 0.001;
+    if (budL.visible) dock(budL, startL, dockL, hoverL, dropL);
 
     // The case rises in from below with its lid open; then the lid swings shut and the LED lights.
     caseRoot.visible = caseIn > 0.001;
@@ -451,6 +461,8 @@ const steps = [
     if (k > 0) {
       // Open, the lid makes the case tall; shut, it's compact, so the framing follows the lid.
       const cb = new THREE.Box3(caseBox.min.clone().lerp(shutBox.min, shut), caseBox.max.clone().lerp(shutBox.max, shut));
+      if (dropR < 1) cb.union(around(budR));
+      if (budL.visible && dropL < 1) cb.union(around(budL));
       cb.getCenter(target2);
       target.lerp(target2, k);
       d = THREE.MathUtils.lerp(d, fit(cb, 1.3 + 0.25 * shut), k);

@@ -13,12 +13,13 @@
   --cobalt: #2c4fa3;
   --green: #2e8b57;
   --ochre: #d9a441;
-  /* Poster inks, from the reference sheet: night black, phosphor, magenta, rose paper, board green. */
+  /* Poster inks, from the reference sheet: night black, phosphor, signal red, sage paper, board green. */
   --night: #121110;
   --bone: #efe8d8;
-  --magenta: #ff3d8b;
+  --signal: #ff5a36;
   --phosphor: #4be08a;
-  --rose: #e8c3ba;
+  --sage: #d9ddc9;
+  --celadon: #cddbd3;
   --pcb: #1e5e3f;
   --code-bg: #e7dfcc;
   --grain: 0.5;
@@ -95,8 +96,8 @@ img { max-width: 100%; height: auto; }
 }
 .top .wrap { display: flex; align-items: center; gap: 20px; height: 58px; }
 .brand { font-family: var(--pixel); font-size: 18px; text-decoration: none; display: flex; gap: 8px; align-items: baseline; white-space: nowrap; }
-.brand b { color: var(--magenta); font-weight: 400; }
-.brand i { width: 12px; height: 12px; background: var(--magenta); box-shadow: 4px 4px 0 var(--phosphor); align-self: center; }
+.brand b { color: var(--signal); font-weight: 400; }
+.brand i { width: 12px; height: 12px; background: var(--signal); box-shadow: 4px 4px 0 var(--phosphor); align-self: center; }
 .brand span { font: 500 11px var(--mono); color: var(--muted); letter-spacing: 0.06em; }
 .top nav { display: flex; gap: 18px; margin-left: auto; font: 500 13px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
 .top nav a { text-decoration: none; }
