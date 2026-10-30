@@ -1,0 +1,201 @@
+---
+// ⌘K search: every section of every chapter, and every plate.
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<dialog class="sx" aria-label="Search the manual" data-base={base}>
+  <div class="sx-card">
+    <label class="sx-field">
+      <span class="sx-prompt pixel" aria-hidden="true">FIND&gt;</span>
+      <input type="search" placeholder="LEB128, battery, channel 15…" autocomplete="off" spellcheck="false" aria-label="Search" aria-controls="sx-list" />
+      <kbd class="mono">esc</kbd>
+    </label>
+    <div class="sx-list" id="sx-list" role="listbox"></div>
+    <div class="sx-foot mono"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>↵</kbd> open</span><span class="sx-n"></span></div>
+  </div>
+</dialog>
+
+<style is:global>
+  .sx-open {
+    display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px 0 10px; border-radius: 6px;
+    border: 1.5px solid var(--text); background: var(--paper); color: var(--text); cursor: pointer;
+    font: 600 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .not-mac .sx-open kbd { font-size: 0; }
+  .not-mac .sx-open kbd::after { content: "Ctrl K"; font-size: 10px; }
+  .sx-open b { font-weight: 400; font-size: 15px; line-height: 1; }
+  .sx-open:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--signal); }
+  .sx-open kbd { font: 600 10px var(--mono); padding: 2px 5px; border-radius: 3px; background: var(--text); color: var(--paper); }
+  @media (max-width: 640px) { .sx-open { padding: 0 8px; } .sx-open span, .sx-open kbd { display: none; } }
+
+  .sx { width: min(680px, calc(100vw - 24px)); max-width: none; max-height: none; margin: 11vh auto 0; padding: 0; border: 0; background: transparent; overflow: visible; }
+  .sx::backdrop { background: rgba(18, 17, 16, 0.55); backdrop-filter: blur(3px); }
+  .sx-card {
+    background: var(--night); color: var(--bone); border: 1.5px solid var(--bone); border-radius: 10px;
+    box-shadow: 8px 8px 0 var(--signal); overflow: hidden; display: flex; flex-direction: column; max-height: 74vh;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .sx[open] .sx-card { animation: sx-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .sx[open]::backdrop { animation: sx-fade 0.2s ease; }
+  }
+  @keyframes sx-in { from { opacity: 0; transform: translateY(-14px) scale(0.98); box-shadow: 0 0 0 var(--signal); } }
+  @keyframes sx-fade { from { opacity: 0; } }
+  .sx-field { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #2c2a25; }
+  .sx-prompt { color: var(--signal); font-size: 15px; }
+  .sx-field input {
+    flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--bone);
+    font: 500 19px var(--sans); caret-color: var(--phosphor);
+  }
+  .sx-field input::placeholder { color: #6f685c; }
+  .sx-field input::-webkit-search-cancel-button { display: none; }
+  .sx kbd { font: 600 10px var(--mono); padding: 2px 6px; border: 1px solid #4a463d; border-radius: 3px; color: #9d968a; }
+  .sx-list { overflow-y: auto; overscroll-behavior: contain; padding: 6px 0 10px; scrollbar-width: thin; scrollbar-color: #4a463d transparent; }
+  .sx-group { padding: 12px 18px 6px; font: 600 10px var(--mono); letter-spacing: 0.18em; color: var(--phosphor); }
+  .sx-item { display: flex; gap: 14px; align-items: flex-start; padding: 10px 18px; text-decoration: none; color: inherit; border-left: 3px solid transparent; }
+  .sx-item:hover { color: inherit; }
+  .sx-item.on { background: #1f1d19; border-left-color: var(--signal); }
+  .sx-num { font: 400 15px var(--pixel); color: var(--signal); min-width: 26px; padding-top: 1px; }
+  .sx-body { min-width: 0; flex: 1; }
+  .sx-title { font: 600 15px/1.35 var(--sans); }
+  .sx-title small { display: block; font: 500 11px/1.5 var(--mono); letter-spacing: 0.04em; color: #9d968a; }
+  .sx-snip { margin-top: 3px; font: 13px/1.5 var(--sans); color: #b4ab99; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sx mark { background: none; color: var(--phosphor); font-weight: 600; box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--phosphor) 45%, transparent); }
+  .sx-thumb { width: 92px; aspect-ratio: 16 / 10; flex: none; object-fit: cover; object-position: top left; background: #efe8d8; border: 1px solid #4a463d; border-radius: 3px; }
+  .sx-go { align-self: center; font: 600 13px var(--mono); color: var(--signal); opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s; }
+  .sx-item.on .sx-go { opacity: 1; transform: none; }
+  .sx-empty { padding: 18px; font: 13px/1.6 var(--mono); color: #9d968a; }
+  .sx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .sx-chips button { font: 600 11px var(--mono); letter-spacing: 0.06em; color: var(--bone); background: transparent; border: 1px solid #4a463d; border-radius: 99px; padding: 5px 11px; cursor: pointer; }
+  .sx-chips button:hover { border-color: var(--phosphor); color: var(--phosphor); }
+  .sx-foot { display: flex; gap: 16px; padding: 9px 18px; border-top: 1px solid #2c2a25; font-size: 11px; color: #9d968a; }
+  .sx-n { margin-left: auto; }
+  @media (max-width: 640px) { .sx { margin-top: 12px; } .sx-card { max-height: calc(100dvh - 24px); } .sx-foot { display: none; } .sx-thumb { width: 64px; } }
+
+  /* Arriving from search: the heading or plate you asked for flashes once. */
+  @media (prefers-reduced-motion: no-preference) {
+    .prose h2:target, .prose h3:target { animation: found 1.8s ease 0.2s; }
+  }
+  @keyframes found { 0%, 40% { background: color-mix(in srgb, var(--accent, var(--verm)) 28%, transparent); box-shadow: -10px 0 0 color-mix(in srgb, var(--accent, var(--verm)) 28%, transparent); } }
+</style>
+
+<script>
+  type Section = { c: string; n: string; t: string; h: string; id: string; x: string };
+  type Plate = { c: string; n: string; t: string; p: string; f: string };
+  const dlg = document.querySelector<HTMLDialogElement>(".sx")!;
+  const input = dlg.querySelector("input")!;
+  const list = dlg.querySelector<HTMLElement>(".sx-list")!;
+  const count = dlg.querySelector<HTMLElement>(".sx-n")!;
+  const base = dlg.dataset.base!;
+  let index: Promise<{ sections: Section[]; plates: Plate[] }> | null = null;
+  let sel = 0;
+
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+  const reEsc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function mark(text: string, terms: string[]) {
+    if (!terms.length) return esc(text);
+    const re = new RegExp(`(${terms.map(reEsc).join("|")})`, "gi");
+    return text.split(re).map((part, i) => (i % 2 ? `<mark>${esc(part)}</mark>` : esc(part))).join("");
+  }
+  // A window of the section text around the first hit.
+  function snippet(x: string, terms: string[]) {
+    const low = x.toLowerCase();
+    const at = Math.min(...terms.map((t) => low.indexOf(t)).filter((i) => i >= 0), x.length);
+    const from = Math.max(0, at - 50);
+    const cut = x.slice(from, from + 190);
+    return (from ? "…" : "") + mark(cut.slice(from ? cut.indexOf(" ") + 1 : 0), terms) + (from + 190 < x.length ? "…" : "");
+  }
+  const hits = (hay: string, t: string) => hay.split(t).length - 1;
+
+  function suggest() {
+    list.innerHTML = `<div class="sx-empty">Search all 13 chapters and 42 plates.<div class="sx-chips">${["channel 15", "LEB128", "battery", "checksum", "RFCOMM", "noise cancelling", "endian", "Hall sensor"]
+      .map((s) => `<button type="button">${s}</button>`).join("")}</div></div>`;
+    count.textContent = "";
+    for (const b of list.querySelectorAll("button")) b.addEventListener("click", () => { input.value = b.textContent!; run(); input.focus(); });
+  }
+
+  async function run() {
+    const q = input.value.trim().toLowerCase();
+    if (!q) return suggest();
+    const { sections, plates } = await (index ??= fetch(`${base}/search.json`).then((r) => r.json()));
+    if (input.value.trim().toLowerCase() !== q) return;
+    const terms = [...new Set(q.split(/\s+/))].filter(Boolean);
+    const phrase = q;
+    const sec = sections
+      .map((s) => {
+        const head = `${s.t} ${s.h}`.toLowerCase(), body = s.x.toLowerCase();
+        if (!terms.every((t) => head.includes(t) || body.includes(t))) return null;
+        let score = terms.reduce((n, t) => n + (s.h.toLowerCase().includes(t) ? 12 : 0) + (s.t.toLowerCase().includes(t) ? 6 : 0) + Math.min(10, hits(body, t)), 0);
+        if (body.includes(phrase) || head.includes(phrase)) score += 8;
+        return { s, score };
+      })
+      .filter((r): r is { s: Section; score: number } => !!r)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+    const pl = plates
+      .filter((p) => terms.every((t) => `${p.p} ${p.t} ${p.f}`.toLowerCase().includes(t)))
+      .slice(0, 4);
+
+    let html = "";
+    if (sec.length) {
+      html += `<div class="sx-group">SECTIONS</div>`;
+      html += sec.map(({ s }) => `<a class="sx-item" role="option" href="${base}/chapters/${s.c}/${s.id ? `#${s.id}` : ""}">
+        <span class="sx-num">${s.n}</span>
+        <span class="sx-body"><span class="sx-title">${mark(s.h || s.t, terms)}${s.h ? `<small>${esc(s.t)}</small>` : ""}</span><span class="sx-snip">${snippet(s.x, terms)}</span></span>
+        <span class="sx-go">↵</span></a>`).join("");
+    }
+    if (pl.length) {
+      html += `<div class="sx-group">PLATES</div>`;
+      html += pl.map((p) => `<a class="sx-item" role="option" href="${base}/chapters/${p.c}/#plate-${p.f.slice(0, 2)}">
+        <img class="sx-thumb" src="${base}/figures/${p.f}" alt="" loading="lazy" />
+        <span class="sx-body"><span class="sx-title">${mark(p.p, terms)}</span><span class="sx-snip">PLATE ${p.f.slice(0, 2)} · ${esc(p.n)} ${esc(p.t)}</span></span>
+        <span class="sx-go">↵</span></a>`).join("");
+    }
+    list.innerHTML = html || `<div class="sx-empty">Nothing for “${esc(input.value.trim())}”. Try fewer words, or a byte like 0x8106.</div>`;
+    count.textContent = sec.length + pl.length ? `${sec.length + pl.length} found` : "";
+    select(0);
+  }
+
+  function items() { return [...list.querySelectorAll<HTMLAnchorElement>(".sx-item")]; }
+  function select(i: number) {
+    const all = items();
+    if (!all.length) return;
+    sel = (i + all.length) % all.length;
+    all.forEach((a, k) => a.classList.toggle("on", k === sel));
+    all[sel].scrollIntoView({ block: "nearest" });
+  }
+
+  function open() {
+    if (dlg.open) return;
+    document.querySelector<HTMLDialogElement>("dialog[open]")?.close();
+    dlg.showModal();
+    input.select();
+    if (!input.value) suggest();
+    index ??= fetch(`${base}/search.json`).then((r) => r.json());
+  }
+  function close() { dlg.close(); }
+
+  let timer = 0;
+  input.addEventListener("input", () => { clearTimeout(timer); timer = window.setTimeout(run, 60); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); select(sel + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); select(sel - 1); }
+    else if (e.key === "Enter") { e.preventDefault(); items()[sel]?.click(); }
+  });
+  list.addEventListener("mousemove", (e) => {
+    const a = (e.target as HTMLElement).closest(".sx-item");
+    if (a) { const i = items().indexOf(a as HTMLAnchorElement); if (i !== sel) select(i); }
+  });
+  // A result on the page you are already on: close first so the hash can take over.
+  list.addEventListener("click", (e) => { if ((e.target as HTMLElement).closest(".sx-item")) close(); });
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) close(); });
+
+  for (const b of document.querySelectorAll(".sx-open")) b.addEventListener("click", open);
+  addEventListener("keydown", (e) => {
+    const t = e.target as HTMLElement;
+    const typing = t.closest("input, textarea, select, [contenteditable]");
+    if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
+      e.preventDefault();
+      dlg.open ? close() : open();
+    }
+  });
+</script>

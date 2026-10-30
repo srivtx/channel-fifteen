@@ -30,7 +30,8 @@ const c = ink(i);
     </div>
   </header>
   <div class="chapter" style={`--accent:${c.accent === "#121110" ? "#e0462f" : c.accent}`}>
-    <aside class="toc">
+    <aside class="toc" id="rail" aria-label="Chapters">
+      <div class="toc-head mono"><span>CONTENTS · {all.length} CHAPTERS</span><button type="button" class="toc-x" aria-label="Close contents">✕</button></div>
       {all.map((ch) => (
         <a href={`${base}/chapters/${ch.id}/`} class={ch.id === entry.id ? "on" : ""}><b>{number(ch)}</b>{name(ch)}</a>
       ))}
@@ -49,6 +50,8 @@ const c = ink(i);
       </nav>
     </main>
   </div>
+  <button type="button" class="railbtn mono" aria-controls="rail" aria-expanded="false" style={`--accent:${c.accent === "#121110" ? "#e0462f" : c.accent}`}><i></i><b>{number(entry)}</b><span>{name(entry)}</span><em>▴</em></button>
+  <div class="scrim" aria-hidden="true"></div>
   <PlateViewer />
 </Base>
 
@@ -108,6 +111,44 @@ const c = ink(i);
   const rail = document.querySelector<HTMLElement>(".toc");
   if (rail && here) rail.scrollTop = here.offsetTop - rail.clientHeight / 3;
 
+  // On phones the rail is a drawer: a pill at the bottom says where you are
+  // and pulls the contents up over the page.
+  const pill = document.querySelector<HTMLButtonElement>(".railbtn")!;
+  const label = pill.querySelector("span");
+  const chapterName = label?.textContent ?? "";
+  const scrim = document.querySelector<HTMLElement>(".scrim")!;
+  function drawer(open: boolean) {
+    if (!rail) return;
+    rail.classList.toggle("open", open);
+    scrim.classList.toggle("on", open);
+    pill.setAttribute("aria-expanded", String(open));
+    document.documentElement.classList.toggle("pv-lock", open);
+    if (open) {
+      const lit = rail.querySelector<HTMLElement>(".secs a.on") ?? here;
+      if (lit) rail.scrollTop = lit.offsetTop - rail.clientHeight / 3;
+      rail.querySelector<HTMLElement>(".toc-x")!.focus({ preventScroll: true });
+    } else if (document.activeElement && rail.contains(document.activeElement)) pill.focus({ preventScroll: true });
+  }
+  pill.addEventListener("click", () => drawer(true));
+  scrim.addEventListener("click", () => drawer(false));
+  rail?.querySelector(".toc-x")!.addEventListener("click", () => drawer(false));
+  rail?.addEventListener("click", (e) => { if ((e.target as HTMLElement).closest("a")) drawer(false); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && rail?.classList.contains("open")) drawer(false); });
+  // Drag the drawer's head down to put it away.
+  const head = rail?.querySelector<HTMLElement>(".toc-head");
+  let y0 = -1;
+  head?.addEventListener("pointerdown", (e) => { y0 = e.clientY; rail!.style.transition = "none"; });
+  addEventListener("pointermove", (e) => { if (y0 >= 0) rail!.style.transform = `translateY(${Math.max(0, e.clientY - y0)}px)`; });
+  addEventListener("pointerup", (e) => {
+    if (y0 < 0) return;
+    const dy = e.clientY - y0;
+    y0 = -1;
+    rail!.style.transition = rail!.style.transform = "";
+    if (dy > 70) drawer(false);
+  });
+  // Leaving phone width with the drawer open must not leave the page locked.
+  matchMedia("(min-width: 901px)").addEventListener("change", (m) => { if (m.matches) drawer(false); });
+
   // Reading progress under the masthead, and the section you are in.
   const bar = document.querySelector<HTMLElement>(".readbar i")!;
   let ticking = false;
@@ -118,6 +159,7 @@ const c = ink(i);
     bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
     let cur: Element | undefined;
     for (const h of heads) if (h.getBoundingClientRect().top < innerHeight * 0.3) cur = h;
+    if (label) label.textContent = cur ? links.get(cur)!.textContent : chapterName;
     for (const [h, a] of links) {
       const on = h === cur;
       if (on && !a.classList.contains("on") && rail) {

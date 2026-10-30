@@ -170,7 +170,42 @@ img { max-width: 100%; height: auto; }
 .secs a { display: block; padding: 3px 0 3px 12px; margin-left: -1.5px; border-left: 1.5px solid transparent; font-size: 12px; line-height: 1.4; color: var(--muted); text-decoration: none; transition: color 0.2s, border-color 0.2s, background 0.2s; }
 .secs a:hover { color: var(--text); }
 .secs a.on { color: var(--text); border-left-color: var(--accent, var(--verm)); background: color-mix(in srgb, var(--accent, var(--verm)) 10%, transparent); }
-@media (max-width: 900px) { .chapter { grid-template-columns: 1fr; } .toc { position: static; max-height: none; display: none; } }
+.toc-head, .railbtn, .scrim { display: none; }
+/* Phones and narrow windows: the rail becomes a drawer behind a pill. */
+@media (max-width: 900px) {
+  .chapter { grid-template-columns: 1fr; }
+  .toc {
+    position: fixed; z-index: 47; left: 0; right: 0; bottom: 0; top: auto; margin: 0; padding: 0 20px 28px;
+    max-height: min(74dvh, 640px); background: var(--paper); border-top: 1.5px solid var(--text); border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28); -webkit-mask-image: none; mask-image: none; font-size: 14px;
+    transform: translateY(105%); visibility: hidden; transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.38s;
+  }
+  .toc.open { transform: none; visibility: visible; transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .toc > a { padding: 8px 0; }
+  .toc > a:hover { transform: none; }
+  .secs a { font-size: 13px; padding: 6px 0 6px 12px; }
+  .toc-head {
+    display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1;
+    margin: 0 -20px 6px; padding: 22px 20px 12px; background: var(--paper); border-bottom: 1px solid var(--line);
+    font-size: 11px; letter-spacing: 0.14em; color: var(--muted); touch-action: none; cursor: grab;
+  }
+  .toc-head::before { content: ""; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--faint); }
+  .toc-x { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--text); background: var(--paper); color: var(--text); font: 600 12px var(--mono); cursor: pointer; }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 46; background: rgba(18, 17, 16, 0.5); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .scrim.on { opacity: 1; pointer-events: auto; }
+  .railbtn {
+    display: flex; align-items: center; gap: 9px; position: fixed; z-index: 45; left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
+    transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 10px 16px 10px 12px; border-radius: 99px;
+    background: var(--night); color: var(--bone); border: 1.5px solid var(--bone); box-shadow: 4px 4px 0 var(--accent, var(--signal));
+    font-size: 12px; letter-spacing: 0.04em; cursor: pointer; animation: pill-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.6s both;
+  }
+  .railbtn i { width: 8px; height: 8px; flex: none; background: var(--accent, var(--signal)); }
+  .railbtn b { font-weight: 600; }
+  .railbtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .railbtn em { font-style: normal; opacity: 0.6; }
+  .chapter main { padding-bottom: 40px; }
+}
+@keyframes pill-in { from { transform: translate(-50%, 140%); } }
 
 /* Widgets */
 .widget { margin: 2.4em 0; border: 1.5px solid var(--text); border-radius: 14px; background: var(--card); padding: 18px; }

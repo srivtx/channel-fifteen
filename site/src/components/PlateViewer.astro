@@ -124,6 +124,7 @@
     const fig = document.createElement("figure");
     fig.className = "plate-fig";
     fig.tabIndex = 0;
+    fig.id = `plate-${el.getAttribute("src")!.split("/").pop()!.slice(0, 2)}`;
     fig.setAttribute("role", "button");
     const file = el.getAttribute("src")!.split("/").pop()!;
     const label = `PLATE ${file.slice(0, 2)}`;
@@ -236,6 +237,7 @@
     // Bring the plate into view first so the image has somewhere to land.
     const r = pl.img.getBoundingClientRect();
     if (r.bottom < 0 || r.top > innerHeight) pl.fig.scrollIntoView({ block: "center" });
+    if (location.hash.startsWith("#plate-")) history.replaceState(null, "", location.pathname + location.search);
     const done = () => {
       pl.fig.classList.remove("is-away");
       dlg.close();
@@ -283,6 +285,17 @@
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(i); }
     });
   }
+
+  // #plate-09 in the address (from search, or a shared link) opens that plate.
+  function fromHash() {
+    const i = plates.findIndex((pl) => `#${pl.fig.id}` === location.hash);
+    if (i < 0 || at >= 0) return;
+    plates[i].fig.scrollIntoView({ block: "center" });
+    plates[i].fig.classList.add("in");
+    setTimeout(() => open(i), 350);
+  }
+  addEventListener("hashchange", fromHash);
+  fromHash();
 
   dlg.addEventListener("click", (e) => {
     const act = (e.target as HTMLElement).closest<HTMLElement>("[data-act]")?.dataset.act;

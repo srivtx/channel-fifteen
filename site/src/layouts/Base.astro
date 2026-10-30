@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Search from "../components/Search.astro";
 
 interface Props {
   title: string;
@@ -25,6 +26,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     />
     <script is:inline>
       document.documentElement.classList.add("js");
+      if (!/Mac|iPhone|iPad/.test(navigator.platform)) document.documentElement.classList.add("not-mac");
       try {
         const t = localStorage.getItem("theme");
         if (t) document.documentElement.dataset.theme = t;
@@ -41,6 +43,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
           <a href={`${base}/decoder/`}>Decoder</a>
           <a href="https://github.com/srivtx/earshot" class="hide-sm">App</a>
         </nav>
+        <button class="sx-open" type="button" aria-label="Search the manual"><b aria-hidden="true">⌕</b><span>Search</span><kbd>⌘K</kbd></button>
         <button class="theme" id="theme" aria-label="Switch theme">◐</button>
       </div>
     </header>
@@ -51,6 +54,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         <a href="https://github.com/srivtx/earshot">github.com/srivtx/earshot</a>
       </div>
     </footer>
+    <Search />
     <div class="toast mono" role="status" aria-live="polite"></div>
     <script>
       import "../scripts/motion.ts";
