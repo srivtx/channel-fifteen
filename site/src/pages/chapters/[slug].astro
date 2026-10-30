@@ -4,6 +4,7 @@ import Base from "../../layouts/Base.astro";
 import PacketDecoder from "../../components/PacketDecoder.astro";
 import Hopping from "../../components/Hopping.astro";
 import ExplodeViewer from "../../components/ExplodeViewer.astro";
+import PlateViewer from "../../components/PlateViewer.astro";
 import { chapters, title, number, name } from "../../scripts/chapters";
 import { ink } from "../../scripts/inks";
 
@@ -19,10 +20,11 @@ const c = ink(i);
 ---
 
 <Base title={`${title(entry)} — Channel Fifteen`}>
+  <div class="readbar" aria-hidden="true" style={`--accent:${c.accent === "#121110" ? "#e0462f" : c.accent}`}><i></i></div>
   <header class="band" style={`--bg:${c.bg};--fg:${c.fg};--accent:${c.accent}`}>
     <div class="band-in">
       <p class="mono meta">CHAPTER {number(entry)} / {String(all.length - 1).padStart(2, "0")}<span> &nbsp;·&nbsp; CH.15 FIELD MANUAL</span></p>
-      <span class="big pixel" aria-hidden="true">{number(entry)}</span>
+      <span class="big pixel" aria-hidden="true" style={`view-transition-name: num-${entry.id.slice(0, 2)}`}>{number(entry)}</span>
       <h1 class="pixel">{name(entry)}</h1>
       <div class="code mono" aria-hidden="true"><i></i><span>REF {entry.id.toUpperCase()}</span></div>
     </div>
@@ -42,11 +44,12 @@ const c = ink(i);
         {entry.id.startsWith("07") && <PacketDecoder />}
       </article>
       <nav class="pager">
-        {prev ? <a href={`${base}/chapters/${prev.id}/`}><small>← previous</small>{name(prev)}</a> : <span />}
+        {prev ? <a class="pr" href={`${base}/chapters/${prev.id}/`}><small>← previous</small>{name(prev)}</a> : <span />}
         {next ? <a class="nx" href={`${base}/chapters/${next.id}/`}><small>next →</small>{name(next)}</a> : <a class="nx" href={`${base}/`}><small>the end ↑</small>Back to the story</a>}
       </nav>
     </main>
   </div>
+  <PlateViewer />
 </Base>
 
 <style>
@@ -65,18 +68,76 @@ const c = ink(i);
   .pager a:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--accent); color: inherit; }
   .pager small { font: 600 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
   .pager .nx { text-align: right; grid-column: 2; }
+  .readbar { position: fixed; z-index: 41; top: 58px; left: 0; right: 0; height: 3px; pointer-events: none; }
+  .readbar i { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); }
+
+  /* The band prints in: number slides in, title rises out of a slot, barcode scans. */
+  @media (prefers-reduced-motion: no-preference) {
+    .big { animation: big-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+    .meta { animation: fade-in 0.5s ease 0.1s both; }
+    h1 { animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s both; }
+    .code i { animation: scan 0.8s steps(12) 0.35s both; }
+    .code span { animation: fade-in 0.4s ease 0.8s both; }
+    .band::after { animation: fade-in 1.2s ease 0.2s both; }
+  }
+  @keyframes big-in { from { transform: translateX(14%) rotate(4deg); opacity: 0; } }
+  @keyframes rise { from { transform: translateY(0.5em); opacity: 0; clip-path: inset(0 0 100% 0); } to { clip-path: inset(-0.2em -0.2em -0.3em -0.2em); } }
+  @keyframes scan { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes fade-in { from { opacity: 0; } }
   @media (max-width: 640px) { .band-in { min-height: 230px; } .meta span { display: none; } .big { font-size: 120px; } .pager { grid-template-columns: 1fr; } .pager .nx { grid-column: 1; } }
 </style>
 
 <script>
-  // Plates are dense; a tap opens one full size.
-  for (const img of document.querySelectorAll<HTMLImageElement>(".prose p > img")) {
-    const a = document.createElement("a");
-    a.href = img.src;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.title = "Open the plate full size";
-    img.replaceWith(a);
-    a.appendChild(img);
+  // Section rail: the open chapter lists its own sections, lit as you read.
+  const heads = [...document.querySelectorAll<HTMLElement>(".prose h2[id]")];
+  const here = document.querySelector<HTMLElement>(".toc a.on");
+  const links = new Map<Element, HTMLAnchorElement>();
+  if (here && heads.length) {
+    const list = document.createElement("div");
+    list.className = "secs";
+    for (const h of heads) {
+      const a = document.createElement("a");
+      a.href = `#${h.id}`;
+      a.textContent = h.textContent!.replace(/#$/, "").trim();
+      list.append(a);
+      links.set(h, a);
+    }
+    here.after(list);
   }
+  // Open the rail at the chapter you are on, not at the top of the list.
+  const rail = document.querySelector<HTMLElement>(".toc");
+  if (rail && here) rail.scrollTop = here.offsetTop - rail.clientHeight / 3;
+
+  // Reading progress under the masthead, and the section you are in.
+  const bar = document.querySelector<HTMLElement>(".readbar i")!;
+  let ticking = false;
+  function onScroll() {
+    ticking = false;
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - innerHeight;
+    bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
+    let cur: Element | undefined;
+    for (const h of heads) if (h.getBoundingClientRect().top < innerHeight * 0.3) cur = h;
+    for (const [h, a] of links) {
+      const on = h === cur;
+      if (on && !a.classList.contains("on") && rail) {
+        // Keep the lit section inside the rail as you read.
+        const top = a.offsetTop - rail.scrollTop;
+        if (top < 30 || top > rail.clientHeight - 60) rail.scrollTo({ top: a.offsetTop - rail.clientHeight / 3, behavior: "smooth" });
+      }
+      a.classList.toggle("on", on);
+    }
+  }
+  addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  onScroll();
+
+  // ← and → walk the chapters when nothing else wants the keys.
+  addEventListener("keydown", (e) => {
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || document.querySelector("dialog[open]")) return;
+    const t = e.target as HTMLElement;
+    if (t.closest("input, textarea, select, [contenteditable], canvas")) return;
+    const sel = ({ ArrowRight: ".pager .nx", ArrowLeft: ".pager .pr" } as Record<string, string>)[e.key];
+    const a = sel && document.querySelector<HTMLAnchorElement>(sel);
+    if (a) location.href = a.href;
+  });
 </script>

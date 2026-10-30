@@ -15,7 +15,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   <section id="chapters" class="chapters">
     <div class="wrap">
-      <div class="head">
+      <div class="head reveal">
         <p class="kicker">contents · asset 000–012</p>
         <h2 class="pixel">THE CHAPTERS</h2>
         <p class="mono note">Each one opens where the story was, then goes all the way down.</p>
@@ -25,9 +25,9 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
           const plate = firstPlate(c);
           const k = ink(i);
           return (
-            <a class="card" href={`${base}/chapters/${c.id}/`} style={`--bg:${k.bg};--fg:${k.fg};--accent:${k.accent}`}>
+            <a class="card reveal" href={`${base}/chapters/${c.id}/`} style={`--bg:${k.bg};--fg:${k.fg};--accent:${k.accent};--d:${(i % 3) * 0.08}s`}>
               <div class="cardtop">
-                <span class="num pixel">{number(c)}</span>
+                <span class="num pixel" style={`view-transition-name: num-${c.id.slice(0, 2)}`}>{number(c)}</span>
                 <span class="tag mono">ASSET – {String(i + 1).padStart(3, "0")}</span>
               </div>
               {plate && <div class="plate"><img src={`${base}/figures/${plate}`} alt="" loading="lazy" /></div>}
@@ -52,6 +52,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     border: 1.5px solid var(--text); padding: 14px; box-shadow: 6px 6px 0 var(--text); transition: transform 0.15s, box-shadow 0.15s; min-width: 0;
   }
   .card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--text); color: var(--fg); }
+  .card.reveal { transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s; transition-delay: var(--d), var(--d), 0s; }
+  .card.reveal.in:hover { transform: translate(-3px, -3px); transition-delay: 0s; transition-duration: 0.15s; }
+  .card .plate img { transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .card:hover .plate img { transform: scale(1.06); }
   .cardtop { display: flex; justify-content: space-between; align-items: flex-start; }
   .num { font-size: 54px; line-height: 0.9; color: transparent; -webkit-text-stroke: 1.5px var(--fg); }
   .card:hover .num { color: var(--accent); -webkit-text-stroke-color: var(--accent); }

@@ -118,14 +118,30 @@ img { max-width: 100%; height: auto; }
 .prose code { font: 0.88em var(--mono); background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
 .prose pre { padding: 16px 18px; border-radius: 10px; overflow-x: auto; border: 1.5px solid var(--line); font-size: 13.5px; line-height: 1.55; }
 .prose pre code { background: none; padding: 0; }
+/* Code reads as a specimen on night paper, whatever the page theme. */
+.prose .astro-code { background: var(--night) !important; color: var(--shiki-dark) !important; border: 0; border-radius: 0 0 6px 6px; margin: 0; }
+.prose .astro-code span { color: var(--shiki-dark) !important; }
+.codebox { margin: 1.6em 0; border: 1.5px solid var(--text); border-radius: 8px; box-shadow: 6px 6px 0 color-mix(in srgb, var(--accent, var(--verm)) 80%, transparent); background: var(--night); }
+.codehead { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px 7px 14px; border-bottom: 1px solid #2c2a25; color: #9d968a; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+.codehead span { display: flex; align-items: center; gap: 6px; }
+.codehead i { width: 8px; height: 8px; border-radius: 50%; background: #3a3730; }
+.codehead i:first-child { background: var(--accent, var(--verm)); margin-right: 0; }
+.codehead i:nth-child(3) { margin-right: 8px; }
+.codehead button { font: 600 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--bone); background: transparent; border: 1px solid #4a463d; border-radius: 4px; padding: 4px 8px; cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+.codehead button:hover { border-color: var(--phosphor); color: var(--phosphor); }
+.codehead button.ok { background: var(--phosphor); border-color: var(--phosphor); color: var(--night); }
+/* Section links */
+.prose h2, .prose h3 { position: relative; scroll-margin-top: 84px; }
+.anchor { margin-left: 0.4em; color: var(--accent, var(--verm)); text-decoration: none; font-family: var(--mono); font-weight: 500; opacity: 0; transition: opacity 0.15s; }
+.prose h2:hover .anchor, .prose h3:hover .anchor, .anchor:focus-visible { opacity: 1; }
+@media (hover: none) { .anchor { opacity: 0.45; } }
 .prose table { border-collapse: collapse; width: 100%; max-width: 100%; font-size: 15px; display: block; overflow-x: auto; }
 .prose th, .prose td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
 .prose th { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 /* Plates take the chapter column's full width; text stays at a reading measure. */
 .prose > * { max-width: 740px; }
-.prose > p:has(> img), .prose > p:has(> a > img), .prose > .widget { max-width: none; }
-.prose > p:has(> img), .prose > p:has(> a > img) { margin: 2.4em 0; }
-.prose p > a:has(> img) { display: block; cursor: zoom-in; }
+.prose > p:has(> img), .prose > .plate-fig, .prose > .widget { max-width: none; }
+.prose > p:has(> img), .prose > .plate-fig { margin: 2.4em 0; }
 .prose img {
   display: block; width: 100%; border: 1.5px solid var(--text); border-radius: 4px;
   box-shadow: 8px 8px 0 color-mix(in srgb, var(--accent, var(--verm)) 85%, transparent);
@@ -134,11 +150,26 @@ img { max-width: 100%; height: auto; }
 .chapter { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; padding: 40px 16px 80px; max-width: 1240px; margin: 0 auto; }
 .chapter main { min-width: 0; }
 .prose > h1:first-child { display: none; } /* the coloured band above already carries it */
-.toc { position: sticky; top: 80px; align-self: start; font: 13px/1.5 var(--mono); max-height: calc(100vh - 100px); overflow-y: auto; }
+.toc { position: sticky; top: 80px; padding-left: 14px; margin-left: -14px; align-self: start; font: 13px/1.5 var(--mono); max-height: calc(100vh - 100px); overflow-y: auto; }
+/* The rail scrolls on its own but never shows a bar (Firefox drew one on the left);
+   its ends fade instead, so it still reads as more-below. */
+.toc { scrollbar-width: none; overscroll-behavior: contain; padding-bottom: 24px;
+  -webkit-mask-image: linear-gradient(transparent, #000 14px, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(transparent, #000 14px, #000 calc(100% - 36px), transparent); }
+.toc::-webkit-scrollbar { display: none; }
+/* Wide code and tables keep a thin inked bar instead of the chunky default. */
+.prose pre, .prose table { scrollbar-width: thin; scrollbar-color: var(--faint) transparent; }
 .toc a { display: flex; gap: 8px; padding: 5px 0; text-decoration: none; color: var(--muted); }
 .toc a b { color: var(--faint); font-weight: 600; }
 .toc a.on { color: var(--text); }
 .toc a.on b { color: var(--verm); }
+.toc > a { position: relative; transition: color 0.15s, transform 0.15s; }
+.toc > a:hover { color: var(--text); transform: translateX(3px); }
+.toc > a.on::before { content: ""; position: absolute; left: -14px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--accent, var(--verm)); box-shadow: 2px 2px 0 var(--text); }
+.secs { display: grid; margin: 2px 0 10px 24px; border-left: 1.5px solid var(--line); }
+.secs a { display: block; padding: 3px 0 3px 12px; margin-left: -1.5px; border-left: 1.5px solid transparent; font-size: 12px; line-height: 1.4; color: var(--muted); text-decoration: none; transition: color 0.2s, border-color 0.2s, background 0.2s; }
+.secs a:hover { color: var(--text); }
+.secs a.on { color: var(--text); border-left-color: var(--accent, var(--verm)); background: color-mix(in srgb, var(--accent, var(--verm)) 10%, transparent); }
 @media (max-width: 900px) { .chapter { grid-template-columns: 1fr; } .toc { position: static; max-height: none; display: none; } }
 
 /* Widgets */
@@ -149,3 +180,41 @@ img { max-width: 100%; height: auto; }
 .btn.on { background: var(--text); color: var(--paper); }
 
 footer.foot { border-top: 1.5px solid var(--text); padding: 28px 0 60px; font: 13px var(--mono); color: var(--muted); }
+
+/* Header links underline from the left. */
+.top nav a { background: linear-gradient(var(--signal), var(--signal)) 0 100% / 0 2px no-repeat; transition: background-size 0.25s ease, color 0.15s; padding-bottom: 2px; }
+.top nav a:hover { background-size: 100% 2px; color: var(--text); }
+
+/* Copy confirmations */
+.toast {
+  position: fixed; z-index: 60; left: 50%; bottom: 26px; padding: 10px 14px; font-size: 11px; letter-spacing: 0.14em;
+  background: var(--night); color: var(--phosphor); border: 1.5px solid var(--phosphor); border-radius: 4px;
+  box-shadow: 4px 4px 0 var(--phosphor); transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s;
+}
+.toast.on { transform: translate(-50%, 0); opacity: 1; }
+
+/* Rise in on scroll (only once scripts run, so nothing hides without them). */
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); transition-delay: var(--d, 0s); }
+  .js .reveal.in { opacity: 1; transform: none; }
+  /* A plate lands, then its ink offset prints in behind it. */
+  .js .plate-fig.reveal img { box-shadow: 0 0 0 transparent; transition: box-shadow 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.45s, transform 0.25s; }
+  .js .plate-fig.reveal.in img { box-shadow: 8px 8px 0 color-mix(in srgb, var(--accent, var(--verm)) 85%, transparent); }
+  .js .plate-fig.reveal.in:hover img { box-shadow: 11px 11px 0 color-mix(in srgb, var(--accent, var(--verm)) 85%, transparent); transition-delay: 0s; }
+  .js .codebox.reveal { box-shadow: 0 0 0 transparent; transition: opacity 0.7s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.5s ease 0.4s; }
+  .js .codebox.reveal.in { box-shadow: 6px 6px 0 color-mix(in srgb, var(--accent, var(--verm)) 80%, transparent); }
+}
+
+/* Page to page: the masthead holds still, the page lifts away and the next one
+   settles in, and a chapter card's number grows into that chapter's big number. */
+@view-transition { navigation: auto; }
+.top { view-transition-name: masthead; }
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) { animation: 0.28s cubic-bezier(0.4, 0, 1, 1) both page-out; }
+  ::view-transition-new(root) { animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.08s both page-in; }
+  ::view-transition-group(*) { animation-duration: 0.5s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+}
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
+@keyframes page-out { to { opacity: 0; transform: translateY(-18px); } }
+@keyframes page-in { from { opacity: 0; transform: translateY(26px); } }
